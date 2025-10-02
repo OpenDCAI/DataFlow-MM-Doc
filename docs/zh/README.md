@@ -7,8 +7,8 @@ config:
     full: true
     background: tint-plate
     hero:
-      name: DataFlow
-      tagline: 以数据为中心的AI系统
+      name: DataFlow-MM
+      tagline: 以多模态数据为中心的AI系统
       text: 好数据，好模型
       actions:
         -

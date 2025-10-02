@@ -7,8 +7,8 @@ config:
     full: true
     background: tint-plate
     hero:
-      name: DataFlow
-      tagline: Data Centric AI System
+      name: DataFlow-MM
+      tagline: Data Centric AI System for multi-media data.
       text: Better Data, Better results
       actions:
         -
