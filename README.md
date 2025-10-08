@@ -1,6 +1,6 @@
 # dataflow-doc
 
-这个是[https://github.com/OpenDCAI/DataFlow](https://github.com/OpenDCAI/DataFlow)的文档。
+这个是[DataFlow-MM](https://github.com/OpenDCAI/DataFlow-MM)的文档。
 
 
 ## Install

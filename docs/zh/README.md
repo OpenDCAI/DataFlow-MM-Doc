@@ -14,13 +14,13 @@ config:
         -
           theme: brand
           text: 简介
-          link: /zh/notes/guide/basicinfo/intro.md
+          link: /zh/notes/mm_guide/basicinfo/intro.md
         -
           theme: brand
           text: 快速开始
-          link: /zh/notes/guide/quickstart/install.md
+          link: /zh/notes/mm_guide/basicinfo/quickstart.md
         -
           theme: alt
           text: Github →
-          link: https://github.com/OpenDCAI/DataFlow
+          link: https://github.com/OpenDCAI/DataFlow-MM
 ---

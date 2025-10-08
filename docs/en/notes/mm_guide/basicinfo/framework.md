@@ -1,61 +1,60 @@
 ---
-title: Framework Design
+title: 框架设计
 icon: material-symbols:auto-transmission-sharp
 createTime: 2025/06/13 14:59:56
 permalink: /en/mm_guide/basicinfo/framework/
 ---
 ![Dataflow-Framework](/dataflow_framework.jpg)
-# Framework Design
-The main data processing logic of Dataflow's framework is divided into the operator layer (`operator`) and the pipeline layer (`pipeline`). In addition, there are modules such as data management `storage` and large model backend `LLMServing` that provide joint support.
+# 框架设计
+Dataflow的框架主要数据处理逻辑分为算子层(`operator`)和流水线(`pipeline`)层。此外，还有数据管理`storage`和大模型后端`LLMServing`等模共同支持。
 
-To utilize AI-assisted data processing, we have added an `Agent for Dataflow` module. The Agent can (1) automatically orchestrate operators, (2) automatically write data operators, and (3) automatically solve data analysis tasks.
+为了使用AI辅助数据处理，我们额外添加了`Agent for Dataflow`模块。Agent可以(1)自动编排算子 (2)自动编写数据算子 (3)Agent自动解决数据分析任务。
 
-## Data Management
-DataFlow primarily focuses on the processing of large model text data. To enhance usability, the DataFlow kernel uses `pandas`'s `DataFrame` ([https://github.com/pandas-dev/pandas](https://github.com/pandas-dev/pandas))as a carrier to read and write data. Therefore, DataFlow supports common text dataset formats such as `json, jsonl, csv, parquet, pickle` as inputs and outputs. It also performs data cleaning, augmentation, and evaluation through **CRUD** operations on the `DataFrame` table.
 
-In essence, the dataset management functionality is implemented by the `storage` class, with the source code located at [`https://github.com/OpenDCAI/DataFlow/blob/main/dataflow/utils/storage.py`](https://github.com/OpenDCAI/DataFlow/blob/main/dataflow/utils/storage.py). Currently, the framework mainly relies on the **file system** as the carrier for data reading, writing, and caching. In the future, it will support **database systems** for read/write operations to handle extremely large amounts of data.
+## 数据管理
+DataFlow主要关注于大模型文本数据的处理，为了提高易用性，DataFlow内核通过`pandas`([https://github.com/pandas-dev/pandas](https://github.com/pandas-dev/pandas))的`DataFrame`来作为载体实现读写数据。因此，DataFlow支持常见的`json, jsonl, csv, parquet, pickle`等多种文本数据集格式作为输入和输出。并以对`DataFrame`表**增删查改**的方式来实现数据的清洗，扩增和评估。
 
-## Large Model Backend
-For the augmentation, filtering, and scoring of large volumes of data with complex requirements, the powerful and flexible semantic understanding capabilities of large language models are essential. Therefore, DataFlow provides the `LLMServingABC` abstract class to manage online/local large models uniformly. The current derived classes include:
+实质上数据集管理的功能由`storage`类实现，源码位于[`https://github.com/OpenDCAI/DataFlow/blob/main/dataflow/utils/storage.py`](https://github.com/OpenDCAI/DataFlow/blob/main/dataflow/utils/storage.py)。目前框架主要依赖**文件系统**作为数据读写与缓存的载体，未来会支持**数据库系统**的读写以支持超大量数据的处理。
 
-- `LocalModelLLMServing`: Uses [vLLM](https://github.com/vllm-project/vllm) as the inference backend, deploying large models on local GPUs as inference services.
-- `APILLMServing_request`: Uses the `request` method to send requests to large model service providers' APIs on the network (e.g., ChatGPT, Deepseek), supporting concurrent requests in multiple processes.
+## 大模型后端
+大批量的数据，在复杂需求上的扩增，过滤，打分都需要借助大语言模型强大而灵活的语义理解能力。因此，DataFlow提供了`LLMServingABC`抽象类来统一管理在线/本地大模型。目前包括如下派生类：
+- `LocalModelLLMServing`: 使用[vLLM](https://github.com/vllm-project/vllm)作为推理后端，在本地GPU部署大模型作为推理服务。
+- `APILLMServing_request`: 使用`request`方式向网络上的大模型服务商的API（比如ChatGPT，Deepseek）发起请求，支持多进程并发请求。
 
-## DataFlow Operators
+## DataFlow 算子
 
 ![Reasoning-Pipeline](/Reasoning_Pipeline.png)
 
-DataFlow operators are the basic processing units that execute on raw data, typically implemented based on rules, deep learning models, or large language models (LLMs). Taking the `Reasoning Pipeline` schematic diagram above as an example, each rectangular unit can be considered an independent DataFlow operator, used to complete specific data processing tasks (such as cleaning, transformation, validation, etc.).
+DataFlow 算子是对原始数据执行的基本处理单元，通常基于规则、深度学习模型或大语言模型（LLM）实现。以上图中的`Reasoning Pipeline`示意流程图为例，每一个矩形单元均可视为一个独立的 DataFlow 算子，用于完成特定的数据加工任务（如清洗、转换、验证等）。
 
-The code style of each operator in DataFlow is very concise. Below is an example of calling the `ReasoningQuestionDifficultySampleEvaluator` operator, which uses the large model backend to evaluate the difficulty level of questions:
+DataFlow中每一个算子代码风格十分简洁，下方是一个`ReasoningQuestionDifficultySampleEvaluator`算子调用的例子，使用大模型后端来评估问题的难度等级：
 
 ```python
 from dataflow.operators.generate.Reasoning import ReasoningQuestionDifficultySampleEvaluator,
 question_difficulty_classifier = ReasoningQuestionDifficultySampleEvaluator(
-    llm_serving=llm_serving             # Pass in a large model LLMServing class as the backend
+    llm_serving=llm_serving             # 传入一个大模型LLMServing类作为后端
 )
 question_difficulty_classifier.run(
-    storage = self.storage.step(),      # Storage class. Manages, reads, and caches datasets
-    input_key = "instruction",          # The field name of the data to be read
-    output_key = "question_difficulty"  # The field name of the data to be written
+    storage = self.storage.step(),      # 存储类。管理，读写，缓存数据集
+    input_key = "instruction",          # 读入数据的表字段名称
+    output_key = "question_difficulty"  # 写出数据的字段名称
 )
 ```
 
-The design of the operators references the code style of `PyTorch`, which is easy to understand. The necessary settings are initialized in the `__init__` function, and the `run` function dynamically reads and writes based on the field names of the data table. Some parameters are also dynamically input here to reuse operators. DataFlow's code standards only require these two functions as interfaces for operators.
+算子的设计参考了`PyTorch`的代码风格，易于理解。在`__init__`函数中初始化必要的设置，并在`run`函数中动态根据数据表的字段名用于读写，也会有部分参数在这里动态输入一些参数以便复用算子。DataFlow的代码规范只对算子要求这两个函数作为接口。
 
-The `run` function of the operator must include a `storage` parameter for reading and writing data. In addition, the conventions for table fields are as follows:
-- If an operator only needs to read/write **one** field, it generally specifies this through `input_key` and `output_key`.
-- If an operator **does no**t need to write a field, there is no such `output_*` parameter at all.
-- If multiple fields need to be read/written, they are generally specified through parameter names based on their functions, such as `input_question_key`, `input_answer_key`, `output_question_quality_key`.
+算子的`run`函数必须包含一个`storage`形参，用于读写数据。此外，关于表字段的约定如下：
+- 如果算子只需读取/写出一个字段，则一般通过`input_key`和`output_key`来指定。
+- 如果算子不需要写出字段，则完全没有`output_*`这样的形参。
+- 如果需要读取/写出多个字段，则一般通过其功能指定形参名，比如`input_question_key`,`input_answer_key`，`output_question_quality_key`。
 
-The field names in the `run` function of the operator can be flexibly specified by the user to adapt to the variable field naming conventions of LLM datasets (for example, `question`, `instruction`, `human` are all used to represent human questions in multi-turn dialogues). Setting `input_key="question"`, `input_key="instruction"`, or `input_key="human"` allows for flexible reading of such datasets.
+算子的`run`中的字段名可由用户灵活指定，以适应LLM数据集多变的字段命名方式（比如：`question`, `instruction`, `human`都会用来指代多轮对话中人类的问题）。此时设置为`input_key="question"`, `input_key="instruction"` 或 `input_key="human"`即可实现对于该类数据集的自由读取。
 
 ## DataFlow Pipeline
 
-The DataFlow Pipeline is an ordered orchestration of multiple DataFlow operators, aimed at completing a complete data processing or analysis task. By serializing or parallelizing multiple steps such as data generation, cleaning, and validation, it forms the `Reasoning Pipeline` shown in the figure above, achieving full automation of the entire process from raw data to structured results.
+DataFlow Pipeline 是对多个 DataFlow 算子的有序编排，旨在完成一个完整的数据处理或分析任务。通过将数据生成、清洗、验证等多个步骤进行串联或并联组合，形成如上图所示的`Reasoning Pipeline`，用于实现从原始数据到结构化结果的全流程自动化处理。
 
-The pipeline in DataFlow generally organizes operators in the following paradigm, with the overall code style still aligning with `PyTorch`:
-
+DataFlow中的流水线一般以如下范式组织算子，整体代码风格仍然向`PyTorch`看齐：
 ```python
 from dataflow.operators.generate.AgenticRAG import (
     AutoPromptGenerator,
@@ -134,19 +133,20 @@ if __name__ == "__main__":
     model.forward()
 ```
 
-Currently, DataFlow provides a variety of preset `Pipeline` pipelines to accomplish predefined functions. Once you are familiar with the DataFlow framework, you can freely combine existing operators or design your own new operators to construct a `pipeline` suitable for your data processing.
+目前DataFlow提供了多种预设`Pipeline`流水线用于完成预定功能。当你熟悉DataFlow框架后，也可以自由搭配现有算子，或设计你自己的新算子来构建适合你数据处理的`pipeline`。
+
 
 ## DataFlow Agent
 
-The DataFlow Agent is an automated task processing system based on multi-agent collaboration, covering the entire process from **task decomposition → tool registration → scheduling execution → result verification → report generation**, dedicated to the intelligent management and execution of complex tasks. Its core modules include:
+DataFlow Agent 是一个基于多智能体协同的自动化任务处理系统，覆盖 **任务拆解 → 工具注册 → 调度执行 → 结果验证 → 报告生成** 的完整流程，致力于复杂任务的智能化管理与执行。其核心模块包括：
 
-- **Planning Agent**: Understands user intentions and decomposes high-level requirements into specific executable task chains.
-- **Tool Register**: Dynamically manages existing and newly generated tools (such as operators, models, or scripts).
-- **Task Dispatcher**: Assigns tasks to the Execution Agent, supporting automatic code generation and debugging.
-- **Execution Agent**: Executes specific tasks, including data processing and model invocation.
-- **Evaluation Agent**: Assesses the quality and correctness of the execution results.
-- **Analysis Agent**: Summarizes the process and results, generating structured reports.
+- **Planning Agent**：理解用户意图，并将高层需求拆解为具体可执行任务链；
+- **Tool Register**：动态管理已有和新生成的工具（如算子、模型或脚本）；
+- **Task Dispatcher**：将任务指派给 Execution Agent，支持代码自动生成与调试；
+- **Execution Agent**：执行具体任务，进行数据处理、模型调用等；
+- **Evaluation Agent**：对执行结果进行质量与正确性评估；
+- **Analysis Agent**：对流程和结果进行总结，生成结构化报告。
 
-The system supports short-term and long-term memory mechanisms, capable of maintaining multi-turn interaction states. While ensuring standardized processes, it possesses a high degree of dynamic adaptability, making it particularly suitable for complex scenarios requiring multi-stage collaboration, such as data governance and automated data analysis.
+系统支持短期与长期记忆机制，能够维持多轮交互状态，在保证标准化流程的同时，具备高度的动态适应能力，尤其适用于数据治理、自动化数据分析等需要多阶段协同的复杂场景。
 
-![Dataflow-Agent](/agent_en.png)
+![Dataflow-Agent](/agent_zh.png)
