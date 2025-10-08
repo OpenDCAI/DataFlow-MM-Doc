@@ -4,6 +4,7 @@ import { defineNotesConfig } from 'vuepress-theme-plume'
 // import { themeConfig } from './theme-config'
 import { APIGuide } from './api'
 import { MMGuide } from './mm_guide'
+import { MMOperators } from './mm_operators'
 // import { tools } from './tools'
 
 export const zhNotes: ThemeNoteListOptions = defineNotesConfig({
@@ -12,6 +13,7 @@ export const zhNotes: ThemeNoteListOptions = defineNotesConfig({
     notes: [
         APIGuide,
         MMGuide,
+        MMOperators,
         // themeConfig,
         // plugins,
         // tools,

@@ -34,29 +34,6 @@ export const enNavbar = defineNavbarConfig([
                     },
                 ]
             },
-            {
-                text: 'Start with Dataflow',
-                items: [
-                    {
-                        text: 'Installation',
-                        link: '/en/notes/mm_guide/quickstart/install.md',
-                        icon: 'material-symbols-light:download-rounded',
-                        activeMatch: '^/guide/'
-                    },
-                    {
-                        text: 'Quick Start',
-                        link: '/en/notes/mm_guide/quickstart/quickstart.md',
-                        icon: 'solar:flag-2-broken',
-                        activeMatch: '^/guide/'
-                    },
-                    {
-                        text: 'Image Generation',
-                        link: '/en/notes/mm_guide/quickstart/image_generation.md',
-                        icon: 'solar:flag-2-broken',
-                        activeMatch: '^/guide/'
-                    },
-                ]
-            }
         ]
     },
     // {
@@ -65,8 +42,26 @@ export const enNavbar = defineNavbarConfig([
     //     icon: 'material-symbols:article-outline'
     // },
     {
-        text: 'Developer Guide',
+        text: 'Operators',
         icon: "material-symbols:build-outline-sharp",
-        link: '/en/notes/dev_guide/1.index_guide.md',
+        items: [
+            {
+                text: 'Basic Info',
+                items: [
+                    {
+                        text: 'Introduction',
+                        link: '/en/notes/mm_operators/basicinfo/intro.md',
+                        icon: 'mdi:tooltip-text-outline',
+                        activeMatch: '^/guide/'
+                    },
+                    {
+                        text: 'Framework Design',
+                        link: '/en/notes/mm_operators/basicinfo/framework.md',
+                        icon: 'material-symbols:auto-transmission-sharp',
+                        activeMatch: '^/guide/'
+                    },
+                ]
+            },
+        ]
     },
 ])

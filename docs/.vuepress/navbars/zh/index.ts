@@ -33,29 +33,6 @@ export const zhNavbar = defineNavbarConfig([
                             },
                 ]
             },
-            {
-                text: '快速开始',
-                items: [
-                    {
-                        text: '安装',
-                        link: '/zh/notes/mm_guide/quickstart/install.md',
-                        icon: 'material-symbols-light:download-rounded',
-                        activeMatch: '^/guide/'
-                    },
-                    {
-                        text: '快速开始',
-                        link: '/zh/notes/mm_guide/quickstart/quickstart.md',
-                        icon: 'solar:flag-2-broken',
-                        activeMatch: '^/guide/'
-                    },
-                    {
-                        text: '图片生成示例',
-                        link: '/zh/notes/mm_guide/quickstart/image_generation.md',
-                        icon: 'solar:flag-2-broken',
-                        activeMatch: '^/guide/'
-                    },
-                ]
-            }
         ]
     },
     {
@@ -66,7 +43,25 @@ export const zhNavbar = defineNavbarConfig([
         //     { text: "日志", link: '/zh/notes/dev_guide/logging.md' },
         //     { text: "测试用例", link: '/zh/notes/dev_guide/testcase.md' },
         // ]
-        link: '/zh/notes/dev_guide/1.index_guide.md',
+        items: [
+            {
+                text: '基本信息',
+                items: [
+                            {
+                                text: '简介',
+                                link: '/zh/notes/mm_operators/basicinfo/intro.md',
+                                icon: 'mdi:tooltip-text-outline',
+                                activeMatch: '^/guide/'
+                            },
+                            {
+                                text: '框架设计',
+                                link: '/zh/notes/mm_operators/basicinfo/framework.md',
+                                icon: 'material-symbols:auto-transmission-sharp',
+                                activeMatch: '^/guide/'
+                            },
+                ]
+            },
+        ]
     },
     // {
     //     text: '笔记',
