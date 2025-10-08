@@ -2,7 +2,7 @@
 title: 简介
 icon: mdi:tooltip-text-outline
 createTime: 2025/06/13 14:51:34
-permalink: /en/mm_guide/intro/basicinfo/intro/
+permalink: /en/mm_operators/intro/basicinfo/intro/
 ---
 # 简介
 近年来，大模型的发展在很大程度上依赖于大规模、高质量的训练数据。然而，目前主流的训练数据及其处理流程多未公开，公开数据资源的规模和质量仍有限，给社区在构建和优化大模型训练数据的过程中带来不小挑战。

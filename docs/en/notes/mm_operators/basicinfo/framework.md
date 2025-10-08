@@ -2,7 +2,7 @@
 title: 框架设计
 icon: material-symbols:auto-transmission-sharp
 createTime: 2025/06/13 14:59:56
-permalink: /en/mm_guide/basicinfo/framework/
+permalink: /en/mm_operators/basicinfo/framework/
 ---
 ![Dataflow-Framework](/dataflow_framework.jpg)
 # 框架设计

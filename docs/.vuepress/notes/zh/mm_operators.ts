@@ -1,9 +1,9 @@
 import type { ThemeNote } from 'vuepress-theme-plume'
 import { defineNoteConfig } from 'vuepress-theme-plume'
 
-export const MMGuide: ThemeNote = defineNoteConfig({
-    dir: 'mm_guide',
-    link: '/mm_guide/',
+export const MMOperators: ThemeNote = defineNoteConfig({
+    dir: 'mm_operators',
+    link: '/mm_operators/',
     sidebar: [
         {
             text: '基础信息',

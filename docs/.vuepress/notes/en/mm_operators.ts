@@ -1,23 +1,22 @@
 import type { ThemeNote } from 'vuepress-theme-plume'
 import { defineNoteConfig } from 'vuepress-theme-plume'
 
-export const MMGuide: ThemeNote = defineNoteConfig({
-    dir: 'mm_guide',
-    link: '/mm_guide/',
+export const MMOperators: ThemeNote = defineNoteConfig({
+    dir: 'mm_operators',
+    link: '/mm_operators/',
     sidebar: [
         {
-            text: '基础信息',
+            text: 'Basic Info',
             collapsed: false,
             icon: 'carbon:idea',
             prefix: 'basicinfo',
             items: [
                 'intro',
                 'framework',
-                'install',
             ],
         },
         {
-            text: 'Dataflow图像理解',
+            text: 'Dataflow Image',
             collapsed: false,
             icon: 'carbon:idea',
             prefix: 'image_understanding',
@@ -26,7 +25,7 @@ export const MMGuide: ThemeNote = defineNoteConfig({
             ],
         },
         {
-            text: 'Dataflow视频理解',
+            text: 'Dataflow Video',
             collapsed: false,
             icon: 'carbon:idea',
             prefix: 'video_understanding',
@@ -36,7 +35,7 @@ export const MMGuide: ThemeNote = defineNoteConfig({
             ],
         },
         {
-            text: 'Dataflow语音理解',
+            text: 'Dataflow Audio',
             collapsed: false,
             icon: 'carbon:idea',
             prefix: 'audio_understanding',
@@ -47,7 +46,7 @@ export const MMGuide: ThemeNote = defineNoteConfig({
             ],
         },
         {
-            text: 'Dataflow图像/视频生成',
+            text: 'Dataflow Generation',
             collapsed: false,
             icon: 'carbon:idea',
             prefix: 'image_video_generation',

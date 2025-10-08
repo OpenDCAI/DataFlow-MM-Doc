@@ -16,17 +16,43 @@ export const MMGuide: ThemeNote = defineNoteConfig({
             ],
         },
         {
-            text: 'Start with Dataflow',
+            text: 'Dataflow Image',
             collapsed: false,
             icon: 'carbon:idea',
-            prefix: 'quickstart',
+            prefix: 'image_understanding',
             items: [
-                'install',
-                'quickstart',
-                'image_generation',
+                'install_image_understanding',
+            ],
+        },
+        {
+            text: 'Dataflow Video',
+            collapsed: false,
+            icon: 'carbon:idea',
+            prefix: 'video_understanding',
+            items: [
+                'install_video_understanding',
+                'video_caption',
+            ],
+        },
+        {
+            text: 'Dataflow Audio',
+            collapsed: false,
+            icon: 'carbon:idea',
+            prefix: 'audio_understanding',
+            items: [
+                'install_audio_understanding',
                 'audio_caption',
                 'whisper_asr',
-                'video_caption',
+            ],
+        },
+        {
+            text: 'Dataflow Generation',
+            collapsed: false,
+            icon: 'carbon:idea',
+            prefix: 'image_video_generation',
+            items: [
+                'install_image_video_generation',
+                'image_generation',
             ],
         },
     ]
