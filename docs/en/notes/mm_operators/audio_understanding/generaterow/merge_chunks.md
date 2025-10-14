@@ -16,7 +16,7 @@ def __init__(self, num_workers=1):
 ## init Parameters
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| num_workers | int | 1 | Number of worker threads for parallel processing |
+| `num_workers` | `int` | `1` | Number of worker threads for parallel processing |
 
 ## `run`
 ```python
