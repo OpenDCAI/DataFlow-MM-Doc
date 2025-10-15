@@ -22,6 +22,12 @@ export const MMOperators: ThemeNote = defineNoteConfig({
             prefix: 'image_understanding',
             items: [
                 'install_image_understanding',
+                'generate/image_caption',
+                'generate/image_qa',
+                'generate/image_pers_qa',
+                'generate/multimodal_math',
+                'generate/vision_mct_reasoning',
+                'generate/image_scale_caption'
             ],
         },
         {
