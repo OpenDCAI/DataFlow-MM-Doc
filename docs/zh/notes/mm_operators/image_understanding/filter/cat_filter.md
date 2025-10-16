@@ -1,7 +1,8 @@
 ---
-title: cat_filter
-createTime: 2025/10/15 16:01:27
-permalink: /zh/mm_operators/pvcvj9b0/
+title: 文本自然度过滤（CatFilter）
+createTime: 2025/10/15 15:00:00
+icon: material-symbols-light:image
+permalink: /zh/mm_operators/generate/cat_filter/
 ---
 ## 📘 概述
 `CatFilter`（Caption-as-Teacher）是一个**文本复杂度 + OCR 重叠度**联合过滤算子。它对每条 `caption`：

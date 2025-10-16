@@ -27,7 +27,17 @@ export const MMOperators: ThemeNote = defineNoteConfig({
                 'generate/image_pers_qa',
                 'generate/multimodal_math',
                 'generate/vision_mct_reasoning',
-                'generate/image_scale_caption'
+                'generate/image_scale_caption',
+                'eval/clip_image_text_evaluator',
+                'eval/longclip_image_text_evaluator',
+                'eval/vqa_score_image_text_evaluator',
+                'filter/cat_filter',
+                'filter/clip_filter',
+                'filter/complexity_filter',
+                'filter/deduplication_filter',
+                'filter/image_aesthetic_filter',
+                'filter/sensitive/filter',
+                'filter/text_image_diversity_filter'
             ],
         },
         {
