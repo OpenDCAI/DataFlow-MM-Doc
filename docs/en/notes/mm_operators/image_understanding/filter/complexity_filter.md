@@ -2,7 +2,7 @@
 title: complexity_filter
 createTime: 2025/10/15 19:56:44
 icon: material-symbols-light:image
-permalink: /en/mm_operators/complexity_filter/
+permalink: /en/mm_operators/filter/complexity_filter/
 ---
 ## 📘 Overview
 `ComplexityFilter` is a **text filtering operator** based on **Natural Language Inference (NLI)**. It evaluates whether a caption covers multiple visual capability elements (such as color, shape, action recognition, counting, and spatial relationships), thereby determining its **capability richness**.  

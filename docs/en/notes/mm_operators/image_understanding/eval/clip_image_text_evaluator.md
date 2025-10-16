@@ -2,7 +2,7 @@
 title: clip_image_text_evaluator
 createTime: 2025/10/15 19:56:33
 icon: material-symbols-light:image
-permalink: /en/mm_operators/clip_image_text_evaluator/
+permalink: /en/mm_operators/eval/clip_image_text_evaluator/
 ---
 ## 📘 Overview
 `CLIPEvaluator` computes the **image-text alignment score** using **CLIP**, with scores ranging from `[0,1]`.  

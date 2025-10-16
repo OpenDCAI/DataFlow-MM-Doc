@@ -2,7 +2,7 @@
 title: Clip分数评估
 createTime: 2025/10/15 13:47:08
 icon: material-symbols-light:image
-permalink: /zh/mm_operators/rp7koe3d/
+permalink: /zh/mm_operators/eval/clip_image_text_evaluator/
 ---
 ## 📘 概述
 CLIPEvaluator` 基于 **CLIP** 计算图像与文本的**对齐分数**，范围 `[0,1]`。  

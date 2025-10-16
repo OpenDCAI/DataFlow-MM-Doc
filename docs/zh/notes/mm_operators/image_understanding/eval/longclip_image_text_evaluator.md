@@ -2,7 +2,7 @@
 title: LongClip分数评估
 createTime: 2025/10/15 14:30:52
 icon: material-symbols-light:image
-permalink: /zh/mm_operators/fij3l6nv/
+permalink: /zh/mm_operators/eval/longclip_image_text_evaluator/
 ---
 ## 📘 概述
 `LongCLIPEvaluator` 使用 **LongCLIP** 计算图像与**长文本**的对齐分数，分数范围为 `[0,1]`。相较于标准 CLIP，LongCLIP 支持更长的文本上下文（本实现默认 `context_length=248`），适合段落级描述的匹配评估。

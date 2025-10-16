@@ -2,7 +2,7 @@
 title: text_image_diversity_filter
 createTime: 2025/10/15 19:57:00
 icon: material-symbols-light:image
-permalink: /en/mm_operators/text_image_diversity_filter/
+permalink: /en/mm_operators/filter/text_image_diversity_filter/
 ---
 ## 📘 Overview
 `TextImageDiversityFilter` is a **joint text-image deduplication operator** that ensures both textual and visual diversity in a dataset.  

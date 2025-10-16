@@ -2,7 +2,7 @@
 title: 图文多样性过滤（TextImageDiversityFilter）
 createTime: 2025/10/15 19:34:47
 icon: material-symbols-light:image
-permalink: /zh/mm_operators/lfbdnc3k/
+permalink: /zh/mm_operators/filter/text_image_diversity_filter/
 ---
 ## 📘 概述
 `TextImageDiversityFilter` 是一个**文本 + 图像联合去重**算子：  

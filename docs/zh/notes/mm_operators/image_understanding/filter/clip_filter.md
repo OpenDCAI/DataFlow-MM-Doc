@@ -2,7 +2,7 @@
 title: 相似度过滤（ClipFilter）
 createTime: 2025/10/15 15:48:32
 icon: material-symbols-light:image
-permalink: /zh/mm_operators/vmea8ovk/
+permalink: /zh/mm_operators/filter/clip_filter/
 ---
 ## 📘 概述
 `ClipFilter` 是一个基于 **CLIP 相似度** 的图文一致性过滤算子。对每条样本计算图片与文本的归一化嵌入余弦相似度（映射到 `[0,1]` 范围内），当相似度 **≥ 阈值**（`threshold`）时保留该样本，否则过滤掉。

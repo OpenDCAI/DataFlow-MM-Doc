@@ -36,7 +36,7 @@ export const MMOperators: ThemeNote = defineNoteConfig({
                 'filter/complexity_filter',
                 'filter/deduplication_filter',
                 'filter/image_aesthetic_filter',
-                'filter/sensitive/filter',
+                'filter/sensitive_filter',
                 'filter/text_image_diversity_filter'
             ],
         },

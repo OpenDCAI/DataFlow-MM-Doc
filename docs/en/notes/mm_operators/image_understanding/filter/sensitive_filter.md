@@ -2,7 +2,7 @@
 title: sensitive_filter
 createTime: 2025/10/15 19:56:56
 icon: material-symbols-light:image
-permalink: /en/mm_operators/sensitive_filter/
+permalink: /en/mm_operators/filter/sensitive_filter/
 ---
 ## 📘 Overview
 `SensitiveFilter` is a **sensitive content filtering operator** that combines **image NSFW classification** and **text toxicity/hate speech detection** to remove unsafe samples.  

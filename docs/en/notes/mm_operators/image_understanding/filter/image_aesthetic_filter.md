@@ -2,7 +2,7 @@
 title: image_aesthetic_filter
 createTime: 2025/10/15 19:56:51
 icon: material-symbols-light:image
-permalink: /en/mm_operators/image_aesthetic_filter/
+permalink: /en/mm_operators/filter/image_aesthetic_filter/
 ---
 ## 📘 Overview
 `ImageAestheticFilter` is a **basic image aesthetic filtering operator** designed to quickly remove low-quality images.  

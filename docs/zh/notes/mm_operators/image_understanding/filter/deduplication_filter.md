@@ -2,7 +2,7 @@
 title: 图片相似度过滤（DuplicateFilter）
 createTime: 2025/10/15 19:24:01
 icon: material-symbols-light:image
-permalink: /zh/mm_operators/jr4r1iek/
+permalink: /zh/mm_operators/filter/deduplication_filter/
 ---
 ## 📘 概述
 `DeduplicateFilter` 是一个**基于 CLIP 图像嵌入相似度**的去重过滤算子。它为数据集中每张图片提取 CLIP 向量，计算两两余弦相似度，凡是相似度**≥ `threshold`** 的图片对，保留**第一张**、移除**后出现**的重复项。同时会在输出中给出每张保留图片的**最大相似度分数**（列名为 `output_score_key`，默认 `max_similarity`），以便后续审计。

@@ -2,7 +2,7 @@
 title: 敏感内容过滤（SensitiveFilter）
 createTime: 2025/10/15 15:31:35
 icon: material-symbols-light:image
-permalink: /zh/mm_operators/qn81tn9g/
+permalink: /zh/mm_operators/filter/sensitive_filter/
 ---
 ## 📘 概述
 `SensitiveFilter` 是一个**敏感内容过滤**算子，联合**图像敏感分类（NSFW）**与**文本毒性/仇恨检测**对样本进行筛除。  

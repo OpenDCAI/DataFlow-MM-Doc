@@ -2,7 +2,7 @@
 title: 图像美学过滤（ImageAsetheticFilter）
 createTime: 2025/10/15 15:45:04
 icon: material-symbols-light:image
-permalink: /zh/mm_operators/iwc11ea5/
+permalink: /zh/mm_operators/filter/image_aesthetic_filter/
 ---
 ## 📘 概述
 `ImageAestheticFilter` 是一个**图片基础美学过滤**算子，用于快速剔除低质量图像。它基于灰度图的四项指标做判定：**清晰度**（Laplacian 方差）、**亮度**（均值）、**对比度**（标准差）以及**极端像素比例**（近黑/近白占比）。仅当四项全部达标时，样本被保留。

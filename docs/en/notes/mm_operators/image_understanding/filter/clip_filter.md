@@ -2,7 +2,7 @@
 title: clip_filter
 createTime: 2025/10/15 19:56:41
 icon: material-symbols-light:image
-permalink: /en/mm_operators/clip_filter/
+permalink: /en/mm_operators/filter/clip_filter/
 ---
 ## 📘 Overview
 `ClipFilter` is a **consistency filtering operator** based on **CLIP similarity**.  

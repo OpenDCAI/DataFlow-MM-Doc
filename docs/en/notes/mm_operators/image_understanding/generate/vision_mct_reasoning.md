@@ -2,7 +2,7 @@
 title: Multi-modal Reasoning Chain Generation from MCTS Trees (Grounded-RL)
 createTime: 2025/10/15 17:59:19
 icon: material-symbols-light:image
-permalink: /en/mm_operators/vision_mct_reasoning/
+permalink: /en/mm_operators/generate/vision_mct_reasoning/
 ---
 
 ## 📘 Overview

@@ -2,7 +2,7 @@
 title: cat_filter
 createTime: 2025/10/15 19:56:39
 icon: material-symbols-light:image
-permalink: /en/mm_operators/cat_filter/
+permalink: /en/mm_operators/filter/cat_filter/
 ---
 ## 📘 Overview
 `CatFilter` (Caption-as-Teacher) is a **joint filtering operator** based on **textual complexity** and **OCR overlap rate**.  

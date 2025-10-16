@@ -2,7 +2,7 @@
 title: vqa_score_image_text_evaluator
 createTime: 2025/10/15 19:56:31
 icon: material-symbols-light:image
-permalink: /en/mm_operators/vqa_score_image_text_evaluator/
+permalink: /en/mm_operators/eval/vqa_score_image_text_evaluator/
 ---
 ## 📘 Overview
 `VQAScoreEvaluator` uses **BLIP VQA** to transform the question *“Does this image match the description?”* into a **Yes/No probability score** ranging from `[0,1]`.  

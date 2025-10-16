@@ -2,7 +2,7 @@
 title: High-information Density Caption Generation for Images (ScaleCap)
 createTime: 2025/10/15 17:58:50
 icon: material-symbols-light:image
-permalink: /en/mm_operators/image_scale_caption/
+permalink: /en/mm_operators/generate/image_scale_caption/
 ---
 
 

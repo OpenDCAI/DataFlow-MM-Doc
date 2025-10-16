@@ -2,7 +2,7 @@
 title: 能力复杂度过滤（ComplexityFilter）
 createTime: 2025/10/15 16:10:28
 icon: material-symbols-light:image
-permalink: /zh/mm_operators/chryvffp/
+permalink: /zh/mm_operators/filter/complexity_filter/
 ---
 ## 📘 概述
 `ComplexityFilter` 是一个基于 **NLI（自然语言推理）** 的文本过滤算子，用于评估 caption 是否同时覆盖多种视觉能力要素（如颜色、形状、动作识别、计数、空间关系等），从而判定其**能力丰富度**。算子会为每条 caption 构造假设句（模板：`"The following text describes {}."`），使用 MNLI 模型计算 **entailment** 概率；当命中要素的数量达到阈值（`min_k`）时保留该样本，否则过滤掉。

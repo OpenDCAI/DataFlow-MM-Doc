@@ -2,7 +2,7 @@
 title: deduplication_filter
 createTime: 2025/10/15 19:56:47
 icon: material-symbols-light:image
-permalink: /en/mm_operators/deduplication_filter/
+permalink: /en/mm_operators/filter/deduplication_filter/
 ---
 ## 📘 Overview
 `DeduplicateFilter` is a **duplicate removal operator** based on **CLIP image embedding similarity**.  

@@ -2,7 +2,7 @@
 title: Blip分数评估
 createTime: 2025/10/15 14:52:29
 icon: material-symbols-light:image
-permalink: /zh/mm_operators/pbyam5n5/
+permalink: /zh/mm_operators/eval/vqa_score_image_text_evaluator/
 ---
 ## 📘 概述
 `VQAScoreEvaluator` 使用 **BLIP VQA** 将“图像是否与描述匹配”转化为一个**是/否（Yes/No）概率分数**，范围 `[0,1]`：  

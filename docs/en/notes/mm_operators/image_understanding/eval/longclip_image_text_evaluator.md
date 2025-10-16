@@ -1,7 +1,8 @@
 ---
 title: longclip_image_text_evaluator
 createTime: 2025/10/15 19:56:29
-permalink: /en/mm_operators/srndhrv8/
+icon: material-symbols-light:image
+permalink: /en/mm_operators/eval/longclip_image_text_evaluator/
 ---
 ## 📘 Overview
 `LongCLIPEvaluator` computes **image–long-text alignment scores** using **LongCLIP**, producing scores in the range `[0,1]`.  
