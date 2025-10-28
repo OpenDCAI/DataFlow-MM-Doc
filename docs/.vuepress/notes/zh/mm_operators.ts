@@ -32,6 +32,7 @@ export const MMOperators: ThemeNote = defineNoteConfig({
                 'generate/image_scale_caption',
                 'generate/image_gcot',
                 'generate/image_skvqa',
+                'generate/image_caprl',
                 'eval/clip_image_text_evaluator',
                 'eval/longclip_image_text_evaluator',
                 'eval/vqa_score_image_text_evaluator',
