@@ -54,6 +54,7 @@ export const MMGuide: ThemeNote = defineNoteConfig({
             items: [
                 'install_image_video_generation',
                 'image_generation',
+                'image_editing',
             ],
         },
     ]
