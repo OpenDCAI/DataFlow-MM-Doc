@@ -1,7 +1,7 @@
 ---
 title: AIGC 图像编辑
 createTime: 2025/07/15 22:38:45
-permalink: /zh/mm_guide/image_editing
+permalink: /zh/mm_guide/image_editing/
 icon: basil:lightning-alt-outline
 ---
 
