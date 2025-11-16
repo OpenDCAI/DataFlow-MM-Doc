@@ -5,6 +5,12 @@ permalink: /zh/mm_guide/5ub4phag/
 icon: basil:lightning-alt-outline
 ---
 
+# Text-to-Image数据合成流水线
+
+## 1. 概述
+Text-to-Image数据合成流水线的核心目标是提供最基本的图片获取方式。
+
+
 # 快速开始
 为了让DataFlow可以支持图片生成功能，我们基于[diffuser](https://github.com/huggingface/diffusers)中最新的图片生成方法实现大规模的图像生成与编辑，与此同时，我们支持了nano banana（gemini-2.5-flash-image）api对图片进行编辑。
 
