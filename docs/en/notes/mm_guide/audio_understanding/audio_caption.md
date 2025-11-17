@@ -1,27 +1,17 @@
 ---
-title: 音频字幕生成
+title: Audio Caption Generation
 createTime: 2025/07/15 21:33:01
 icon: material-symbols-light:autoplay
 permalink: /en/mm_guide/2gjc47qb/
 ---
 
+## Audio Caption Generation
 
-## 音频字幕生成
+## Step 1: Install Environment
+See[ Audio Environment Installation](./install_audio_understanding.md)
 
-## 第一步: 准备Dataflow环境
-```bash
-conda create -n myvenv python=3.12
-pip install open-dataflow
-pip install open-dataflow[vllm]
-```
-
-## 第二步: 安装Dataflow音频模块
-```bash
-pip install open-dataflow[audio]
-```
-
-## 第三步: 启动本地模型服务
-本地模型调用服务方法如下:
+## Step 2: Start the Local Model Service
+The local model serving method is as follows:
 ```python
 llm_serving = LocalModelLLMServing_vllm(
     hf_model_name_or_path="./models/Qwen2-Audio-7B-Instruct", # set to your own model path
@@ -31,12 +21,13 @@ llm_serving = LocalModelLLMServing_vllm(
 )
 ```
 
-## 第四步: 按如下格式填写音频路径, 准备需要增加音频字幕的数据
+## Step 3: Prepare the Audio Data for Caption Generation
+Fill in the audio paths in the following format:
 ```jsonl
 {"audio": ["your_audio_path"]}
 ```
 
-## 第五步: 按下述格式将数据路径填入FileStorage中
+## Step 4: Add the Data Path to FileStorage in the Following Format
 ```python
 storage = FileStorage(
     first_entry_file_name="your_path",
@@ -48,12 +39,12 @@ storage = FileStorage(
 )
 ```
 
-## 第六步: 初始化CaptionGenerator算子
+## Step 5: Initialize the CaptionGenerator Operator
 ```python
 generator = CaptionGenerator(llm_serving)
 ```
 
-## 第七步: 执行算子
+## Step 6: Execute the Operator
 ```python
 generator.run(storage=storage.step(), output_key="caption")
 ```
