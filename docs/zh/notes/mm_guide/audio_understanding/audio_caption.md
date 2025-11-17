@@ -8,7 +8,7 @@ permalink: /zh/mm_guide/2gjc47qb/
 
 ## 音频字幕生成
 
-## 第一步: 准备Dataflow环境
+<!-- ## 第一步: 准备Dataflow环境
 ```bash
 conda create -n myvenv python=3.12
 pip install open-dataflow
@@ -18,9 +18,12 @@ pip install open-dataflow[vllm]
 ## 第二步: 安装Dataflow音频模块
 ```bash
 pip install open-dataflow[audio]
-```
+``` -->
 
-## 第三步: 启动本地模型服务
+## 第一步: 安装环境
+见[Audio环境安装](./install_audio_understanding.md)
+
+## 第二步: 启动本地模型服务
 本地模型调用服务方法如下:
 ```python
 llm_serving = LocalModelLLMServing_vllm(
@@ -31,12 +34,12 @@ llm_serving = LocalModelLLMServing_vllm(
 )
 ```
 
-## 第四步: 按如下格式填写音频路径, 准备需要增加音频字幕的数据
+## 第三步: 按如下格式填写音频路径, 准备需要增加音频字幕的数据
 ```jsonl
 {"audio": ["your_audio_path"]}
 ```
 
-## 第五步: 按下述格式将数据路径填入FileStorage中
+## 第四步: 按下述格式将数据路径填入FileStorage中
 ```python
 storage = FileStorage(
     first_entry_file_name="your_path",
@@ -48,12 +51,12 @@ storage = FileStorage(
 )
 ```
 
-## 第六步: 初始化CaptionGenerator算子
+## 第五步: 初始化CaptionGenerator算子
 ```python
 generator = CaptionGenerator(llm_serving)
 ```
 
-## 第七步: 执行算子
+## 第六步: 执行算子
 ```python
 generator.run(storage=storage.step(), output_key="caption")
 ```
