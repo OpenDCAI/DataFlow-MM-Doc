@@ -19,10 +19,10 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3,4,5,6,7'  # Set visible GPU device
 from dataflow.utils.storage import FileStorage
 from dataflow.operators.core_audio import (
     SileroVADGenerator,
-    MergeChunksByTimestamps,
+    MergeChunksRowGenerator,
     PromptedAQAGenerator,
-    # CTCForcedAlignFilter,                             # Import this for filtering instead of evaluation
-    CTCForcedAlignSampleEvaluator,
+    # CTCForcedAlignmentFilter,                             # Import this for filtering instead of evaluation
+    CTCForcedAlignmentSampleEvaluator,
 )
 from dataflow.serving import LocalModelVLMServing_vllm
 from dataflow.prompts.whisper_prompt_generator import WhisperTranscriptionPrompt
@@ -57,7 +57,7 @@ class Pipeline:
             num_workers=2,                                          # Process count; each process loads one model instance
         )
         
-        self.merger = MergeChunksByTimestamps(num_workers=2)
+        self.merger = MergeChunksRowGenerator(num_workers=2)
 
         self.prompted_generator = PromptedAQAGenerator(
             vlm_serving=self.serving,
@@ -70,7 +70,7 @@ class Pipeline:
         #     num_workers=1,
         # )
 
-        self.evaluator = CTCForcedAlignSampleEvaluator(
+        self.evaluator = CTCForcedAlignmentSampleEvaluator(
             model_path="MahmoudAshraf/mms-300m-1130-forced-aligner",
             device=["cuda:3"],                                      # GPUs that the model can be loaded on
             num_workers=2,                                          # Process count; each process loads one model instance
@@ -90,7 +90,6 @@ class Pipeline:
             return_seconds=True,
             time_resolution=1,
             neg_threshold=0.35,
-            window_size_samples=512,
             min_silence_at_max_speech=0.098,
             use_max_poss_sil_at_max_speech=True
         )

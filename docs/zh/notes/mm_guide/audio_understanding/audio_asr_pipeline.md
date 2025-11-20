@@ -18,10 +18,10 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3,4,5,6,7'  # 设置可见的GPU设�
 from dataflow.utils.storage import FileStorage
 from dataflow.operators.core_audio import (
     SileroVADGenerator,
-    MergeChunksByTimestamps,
-    PromptedAQAGenerator,
-    # CTCForcedAlignFilter,                             # 如果是过滤而非评估, 则导入过滤算子
-    CTCForcedAlignSampleEvaluator,
+    MergeChunksRowGenerator,
+    PromptedAQAGenerator,                
+    # CTCForcedAlignmentFilter,                         # 如果是过滤而非评估, 则导入过滤算子
+    CTCForcedAlignmentSampleEvaluator,
 )
 from dataflow.serving import LocalModelVLMServing_vllm
 from dataflow.prompts.whisper_prompt_generator import WhisperTranscriptionPrompt
@@ -56,20 +56,20 @@ class Pipeline:
             num_workers=2,                                          # num_workers为进程数, 每个进程启动一个模型, 平均分配在device列表中的每个设备上
         )
         
-        self.merger = MergeChunksByTimestamps(num_workers=2)
+        self.merger = MergeChunksRowGenerator(num_workers=2)
 
         self.prompted_generator = PromptedAQAGenerator(
             vlm_serving=self.serving,
             system_prompt=WhisperTranscriptionPrompt().generate_prompt(language="german", task="transcribe", with_timestamps=False),
         )
 
-        # self.filter = CTCForcedAlignFilter(
+        # self.filter = CTCForcedAlignmentFilter(
         #     model_path="MahmoudAshraf/mms-300m-1130-forced-aligner",
         #     device=["cuda:3"],
         #     num_workers=1,
         # )
 
-        self.evaluator = CTCForcedAlignSampleEvaluator(
+        self.evaluator = CTCForcedAlignmentSampleEvaluator(
             model_path="MahmoudAshraf/mms-300m-1130-forced-aligner",
             device=["cuda:3"],                                      # 可以加载模型的GPU列表 
             num_workers=2,                                          # num_workers为进程数, 每个进程启动一个模型, 平均分配在device列表中的每个设备上
@@ -89,7 +89,6 @@ class Pipeline:
             return_seconds=True,
             time_resolution=1,
             neg_threshold=0.35,
-            window_size_samples=512,
             min_silence_at_max_speech=0.098,
             use_max_poss_sil_at_max_speech=True
         )
@@ -151,5 +150,4 @@ class Pipeline:
 if __name__ == "__main__":
     pipeline = Pipeline()
     pipeline.forward()
-
 ```
