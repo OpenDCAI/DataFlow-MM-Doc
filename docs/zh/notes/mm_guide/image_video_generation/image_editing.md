@@ -40,6 +40,11 @@ cd ./Dataflow-MM
 conda create -n Dataflow-MM python=3.12
 pip install -e .
 ```
+接着进行初始化（**非常重要的一步，务必执行**）
+```bash
+dataflowmm init
+cd gpu_pipelines/
+```
 
 ### 第二步 编辑数据数据准备
 我们使用`jsonl`文件来记录数据，下面是一个简单的输入数据样例：
@@ -62,40 +67,17 @@ storage = FileStorage(
 ### 第三步 运行流水线
 可以参考下述指令运行图片编辑流水线。
 ```bash
-python /path/to/DataFlow-MM/test/test_image_editing.py --serving_type 'local'
+python image_editing_pipeline.py --serving_type 'local'
 ```
 或
 ```bash
-python /path/to/DataFlow-MM/test/test_image_editing.py --api_key \<your_key\> --api_url \<your_url\>
+export DF_API_KEY=<api_key>
+python image_editing_pipeline.py --api_url \<your_url\>
 ```
 
 ## 3. 流水线逻辑
 ### 3.1 提示词设计
-利用在线LLM模型（例如gpt-4o）初始化提示词生成器
-```python
-from dataflow.operators.image_generation import PromptedT2ITextGenerator
-
-os.environ["DF_API_KEY"] = api_key
-serving = APILLMServing_request(
-    api_url=api_url,
-    model_name="gpt-4o",
-    max_workers=5,
-)
-
-text_to_image_sample_generator = PromptedT2ITextGenerator(
-    llm_serving=serving,
-)
-```
-运行提示词生成器
-```python
-text_to_image_sample_generator.run(
-    storage=storage.step(),
-    input_style_key = "input_style",
-    input_prompt_key = "input_text",
-    output_prompt_key = "instruction",
-    output_prompt_key_2 = "output_img_discript",
-)
-```
+利用本地/在线LLM模型（例如gpt-4o）以及设定的数据配比，构建图片生成样例
 
 ### 3.2 图片条件获取
 我们使用文本到图片生成模型，本文到图片生成器初始化方式如下
@@ -176,7 +158,7 @@ self.generator.run(
   ```jsonl
   {
     "conversations": [{"content": "The woman is dancing with the prince in a sacred ballroom.", "role": "user"}],
-    "images": ["./dataflow/example/test_image_editing/images/image3.png"], 
+    "images": ["../example_data/image_gen/image_edit/image3.png"], 
     "edited_images": [""]
   }
   ```
@@ -185,15 +167,17 @@ self.generator.run(
 这里支持本地编辑模型以及在线编辑模型两种生成方式，同时支持多张图片作为输入的
 - 本地编辑模型图片编辑流水线
   ```bash
-  python /path/to/DataFlow-MM/test/test_image_editing.py --serving_type 'local'
+  python /path/to/DataFlow-MM/test/image_editing_pipeline.py --serving_type 'local'
   ```
 - 在线编辑模型图片编辑流水线
   ```bash
-  python /path/to/DataFlow-MM/test/test_image_editing.py --api_key <your_key> --api_url <your_url>
+  export DF_API_KEY=<api_key>
+  python /path/to/DataFlow-MM/test/image_editing_pipeline.py --api_url <your_url>
   ```
 - 多张图片输入的图片编辑流水线
   ```bash
-  python /path/to/DataFlow-MM/test/test_multi_images_to_image_generation.py --api_key <your_key> --api_url <your_url>
+  export DF_API_KEY=<api_key>
+  python /path/to/DataFlow-MM/test/multi_images_to_image_generation_pipeline.py --api_url <your_url>
   ```
 
 ## 6. 流水线示例
@@ -208,8 +192,8 @@ self.generator.run(
   class ImageGenerationPipeline():
     def __init__(self, serving_type="local", api_key="", api_url="http://123.129.219.111:3000/v1/"):
         self.storage = FileStorage(
-            first_entry_file_name="./dataflow/example/image_gen/image_edit/prompts.jsonl",
-            cache_path="./cache_local/multi2single_image_gen",
+            first_entry_file_name="../example_data/image_gen/image_edit/prompts.jsonl",
+            cache_path="./cache_local/image_editing",
             file_name_prefix="dataflow_cache_step",
             cache_type="jsonl"
         )
@@ -251,8 +235,8 @@ self.generator.run(
     def __init__(self, serving_type="local", api_key="", api_url="http://123.129.219.111:3000/v1/"):
         os.environ['DF_API_KEY'] = api_key
         self.storage = FileStorage(
-            first_entry_file_name="./dataflow/example/image_gen/image_edit/prompts.jsonl",
-            cache_path="./cache_local/multi2single_image_gen",
+            first_entry_file_name="../example_data/image_gen/image_edit/prompts.jsonl",
+            cache_path="./cache_local/image_editing",
             file_name_prefix="dataflow_cache_step",
             cache_type="jsonl"
         )
@@ -281,13 +265,11 @@ self.generator.run(
 - **多图输入图片编辑数据合成流水线**：
   ```python
   import os
-  from dataflow.operators.image_generation import PromptedT2ITextGenerator
+  import argparse
   from dataflow.operators.core_vision import PromptedImageGenerator
   from dataflow.operators.core_vision import PromptedImageEditGenerator
-  from dataflow.serving.api_llm_serving_request import APILLMServing_request
   from dataflow.serving.api_vlm_serving_openai import APIVLMServing_openai
   from dataflow.serving.local_image_gen_serving import LocalImageGenServing
-  from dataflow.prompts.image_gen_prompt_generator import MultiImagesToImagePromptGenerator
   from dataflow.utils.storage import FileStorage
   from dataflow.io import ImageIO
 
@@ -296,45 +278,30 @@ self.generator.run(
       def __init__(
           self, 
           serving_type="api", 
-          api_key="", 
-          api_url="https://api.openai.com/v1/", 
-          api_vlm_url="https://api.openai.com/v1/", 
+          api_url="https://api.openai.com/v1/",
           ip_condition_num=1, 
           repeat_times=1
       ):
           self.storage = FileStorage(
-              first_entry_file_name="./dataflow/example/image_gen/multi_image_input_gen/prompts.jsonl",
-              cache_path="./cache_local/multi_images_to_image_gen",
+              first_entry_file_name="../example_data/image_gen/multi_image_input_gen/prompts.jsonl",
+              cache_path="./cache_local/multi_subjects_driven_image_generation",
               file_name_prefix="dataflow_cache_step",
               cache_type="jsonl"
-          )
-
-          os.environ["DF_API_KEY"] = api_key
-          self.serving = APILLMServing_request(
-              api_url=api_url,
-              model_name="gpt-4o",
-              max_workers=5,
           )
           
           self.t2i_serving = LocalImageGenServing(
               image_io=ImageIO(save_path=os.path.join(self.storage.cache_path, "condition_images")),
-              batch_size=8,
-              hf_model_name_or_path="/ytech_m2v5_hdd/CheckPoints/FLUX.1-dev",
+              batch_size=4,
+              hf_model_name_or_path="/ytech_m2v5_hdd/CheckPoints/FLUX.1-dev",   # "black-forest-labs/FLUX.1-dev"
               hf_cache_dir="./cache_local",
               hf_local_dir="./ckpt/models/"
           )
 
           self.vlm_serving = APIVLMServing_openai(
-              api_url=api_vlm_url,
-              model_name="gemini-2.5-flash-image-preview",
+              api_url=api_url,
+              model_name="gemini-2.5-flash-image-preview",               # try nano-banana
               image_io=ImageIO(save_path=os.path.join(self.storage.cache_path, "target_images")),
               # send_request_stream=True,    # if use ip http://123.129.219.111:3000/ add this line
-          )
-
-          self.t2i_text_prompt_generator = MultiImagesToImagePromptGenerator()
-
-          self.text_to_image_sample_generator = PromptedT2ITextGenerator(
-              llm_serving=self.serving,
           )
 
           self.text_to_image_generator = PromptedImageGenerator(
@@ -346,15 +313,6 @@ self.generator.run(
           )
 
       def forward(self):
-          self.text_to_image_sample_generator.run(
-              storage=self.storage.step(),
-              prompt_generator=self.t2i_text_prompt_generator,
-              input_style_key = "input_style",
-              input_prompt_key = "input_text",
-              output_prompt_key = "instruction",
-              output_prompt_key_2 = "output_img_discript",
-          )
-
           self.text_to_image_generator.run(
               storage=self.storage.step(),
               input_conversation_key="input_text",

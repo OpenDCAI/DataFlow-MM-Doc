@@ -8,117 +8,125 @@ icon: basil:lightning-alt-outline
 # Text-to-Image数据合成流水线
 
 ## 1. 概述
-Text-to-Image数据合成流水线的核心目标是提供最基本的图片获取方式。
+**Text-to-Image数据合成流水线**的核心目标是提供最基本的图片获取方式。根据每一个样例提供的图片提示词生成图片，为后续进一步的图片处理提供支持。目前主要支持了使用FLUX获取文本到图片生成的功能。
+
+### 支持应用场景
+
+- **文本到图片生成**
+  - 根据输入文本生成目标图片
+  - 特点：用户获取需要图片最简单的方式
 
 
-# 快速开始
-为了让DataFlow可以支持图片生成功能，我们基于[diffuser](https://github.com/huggingface/diffusers)中最新的图片生成方法实现大规模的图像生成与编辑，与此同时，我们支持了nano banana（gemini-2.5-flash-image）api对图片进行编辑。
-
-## 文本到图片生成
-### 第一步:安装dataflow环境
-```shell
-pip install open-dataflow
+## 2. 快速开始
+### 第一步 安装Dataflow-MM环境
+```bash
+cd ./Dataflow-MM
+conda create -n Dataflow-MM python=3.12
+pip install -e .
+```
+接着进行初始化
+```bash
+dataflowmm init
+cd gpu_pipelines/
 ```
 
-### 第二步:准备用于生成图片的文本提示词数据
+### 第二步 文生图数据准备
+我们使用`jsonl`文件来记录数据，下面是一个简单的输入数据样例：
 ```jsonl
-{"conversations": [{"content": "a fox darting between snow-covered pines at dusk", "role": "user"}], "images": [""]}
-{"conversations": [{"content": "a kite surfer riding emerald waves under a cloudy sky", "role": "user"}], "images": [""]}
-```
-提供上述格式的数据，并且将数据路径填入
-```python
-from dataflow.utils.storage import FileStorage
-
-self.storage = FileStorage(
-    first_entry_file_name="your path",
-    cache_path="./cache_local",
-    file_name_prefix="dataflow_cache_step",
-    cache_type="jsonl"
-)
+{"conversations": [{"content": "a fox darting between snow-covered pines at dusk", "role": "user"}]}
+{"conversations": [{"content": "a kite surfer riding emerald waves under a cloudy sky", "role": "user"}]}
 ```
 
-### 第二步:(如果选择本地模型进行图片生成)
-本地模型调用方式如下，注意我们使用对应的IO类来控制文件的输入以及输出：
+数据加载需要定义`FileStorage`:
 ```python
-from dataflow.serving.local_image_gen_serving import LocalImageGenServing
-from dataflow.io import ImageIO
+storage = FileStorage(
+   first_entry_file_name="<Your jsonl file path>",
+   cache_path="./cache_local/<Your task name>",
+   file_name_prefix="dataflow_cache_step",
+   cache_type="jsonl"
+  )
+```
 
-self.serving = LocalImageGenServing(
-    image_io=ImageIO(save_path=os.path.join(self.storage.cache_path, "images")),
-    batch_size=4,
+### 第三步 定义文本到图片生成serving
+我们使用文本到图片生成模型，本文到图片生成器初始化方式如下
+```python
+t2i_serving = LocalImageGenServing(
+    image_io=ImageIO(save_path=os.path.join(storage.cache_path, "condition_images")),
+    batch_size=8,
     hf_model_name_or_path="black-forest-labs/FLUX.1-dev",
-    hf_cache_dir="~/.cache/huggingface",
+    hf_cache_dir="./cache_local",
     hf_local_dir="./ckpt/models/"
 )
 ```
-
-### 第四步:进行图片生成
-根据如下脚本可完成生图任务
+运行文本到图片生成器
 ```python
-from dataflow.operators import Text2ImageGenerator
-
-self.generator = Text2ImageGenerator(pipe=self.serving)
-
-self.generator.run(
-    storage=self.storage.step(),
-    input_conversation_key="conversations",
-    output_image_key="images"
+text_to_image_generator.run(
+    storage=storage.step(),
+    input_conversation_key="input_text",
+    output_image_key="input_image",
 )
 ```
 
-## 图片编辑
-该任务和文本到图片生成基本一致，需要对模型调用、数据准备以及算子调用进行一定的微调
-
-本地模型调用方式如下：
-```python
-from dataflow.serving.local_image_gen_serving import LocalImageGenServing
-
-self.serving = LocalImageGenServing(
-    image_io=ImageIO(save_path=os.path.join(self.storage.cache_path, "images")),
-    hf_model_name_or_path="black-forest-labs/FLUX.1-Kontext-dev",
-    hf_cache_dir="./cache_local",
-    hf_local_dir="./ckpt/models/",
-    Image_gen_task="imageedit",
-    batch_size=4,
-    diffuser_model_name="FLUX-Kontext",
-    diffuser_num_inference_steps=28,
-    diffuser_guidance_scale=3.5,
-)
+### 第四步 运行流水线
+可以参考下述指令运行图片编辑流水线。
+```bash
+python text_to_image_generation_pipeline.py
 ```
 
-数据准备调整如下：
-```jsonl
-{"conversations": [{"content": "Change the woman's clothes to a white dress.", "role": "user"}], "images": ["./dataflow/example/test_image_editing/images/image1.png"], "edited_images": [""]}
-{"conversations": [{"content": "Change the vase to red.", "role": "user"}], "images": ["./dataflow/example/test_image_editing/images/image2.png"], "edited_images": [""]}
-```
+## 3. 输出数据
+- **格式**：`jsonl` 
+- **字段说明**：
+  - `conversations`: 包含图片生成描述
+  - `images`: 包含被生成的图片
+- **示例**：
+  ```jsonl
+  {
+    "conversations": [{"content": "The woman is dancing with the prince in a sacred ballroom.", "role": "user"}],
+    "images": ["./dataflow/example/text_to_image_generation/images/image3.png"], 
+  }
+  ```
 
-生成脚本调整如下：
-```python
-from dataflow.operators.core_vision import PromptedImageEditGenerator
 
-self.generator = PromptedImageEditGenerator(pipe=self.serving)
-
-self.generator.run(
-    storage=self.storage.step(),
-    input_image_key="images",
-    input_conversation_key="conversations",
-    output_image_key="edited_images",
-)
-```
-
-### 调用nano-banana
-目前我们接入了使用nano-banana对图片进行编辑，参考前文的图片编辑，只要修改对应的serving即可运行nano-banana进行测试。模型调用方式如下所示：
+## 5. 流水线示例
+下面给出文本到图片生成流水线的示例代码：
 ```python
 import os
-from dataflow.serving.api_vlm_serving_openai import APIVLMServing_openai
+from dataflow.operators.core_vision import PromptedImageGenerator
+from dataflow.serving.local_image_gen_serving import LocalImageGenServing
+from dataflow.utils.storage import FileStorage
+from dataflow.io import ImageIO
 
-os.environ['DF_API_KEY'] = args.api_key
 
-self.serving = APIVLMServing_openai(
-    api_url=api_url,
-    model_name="gemini-2.5-flash-image-preview",               # try nano-banana
-    image_io=ImageIO(save_path=os.path.join(self.storage.cache_path, "images")),
-    send_request_stream=True,
-)
+class ImageGenerationPipeline():
+    def __init__(self):
+        self.storage = FileStorage(
+            first_entry_file_name="../example_data/image_gen/text2image/prompts.jsonl",
+            cache_path="./cache_local/text_to_image_generation",
+            file_name_prefix="dataflow_cache_step",
+            cache_type="jsonl"
+        )
+
+        self.serving = LocalImageGenServing(
+            image_io=ImageIO(save_path=os.path.join(self.storage.cache_path, "condition_images")),
+            batch_size=4,
+            hf_model_name_or_path="black-forest-labs/FLUX.1-dev",
+            hf_cache_dir="./cache_local",
+            hf_local_dir="./ckpt/models/"
+        )
+
+        self.text_to_image_generator = PromptedImageGenerator(
+            t2i_serving=self.serving,
+            save_interval=10
+        )
+    
+    def forward(self):
+        self.text_to_image_generator.run(
+            storage=self.storage.step(),
+            input_conversation_key="conversations",
+            output_image_key="images",
+        )
+
+if __name__ == "__main__":
+    model = ImageGenerationPipeline()
+    model.forward()
 ```
-我们所使用的api来自于[huiyun](http://123.129.219.111:3000)
