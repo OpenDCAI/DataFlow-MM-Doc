@@ -65,7 +65,7 @@ def get_desc(lang: str = "zh") -> str
 def run(
     self, 
     storage: DataFlowStorage,
-    image_key: str = "image", 
+    input_image_key: str = "image", 
     output_key: str = "scalecap_record"
 )
 ```
@@ -77,7 +77,7 @@ def run(
 | 参数名          | 类型                | 默认值                 | 说明                |
 | :----------- | :---------------- | :------------------ | :---------------- |
 | `storage`    | `DataFlowStorage` | 无                   | 数据存储接口，用于读取和写入数据。 |
-| `image_key`  | `str`             | `"image"`           | 图像路径字段名。          |
+| `input_image_key`  | `str`             | `"image"`           | 图像路径字段名。          |
 | `output_key` | `str`             | `"scalecap_record"` | 输出字段名，用于保存生成的描述。  |
 
 ---
@@ -108,7 +108,7 @@ operator = ImageScaleCaptionGenerate(vlm_serving=model, config=cfg)
 # 执行算子
 operator.run(
     storage=storage,
-    image_key="image",
+    input_image_key="image",
     output_key="scalecap_record"
 )
 ```

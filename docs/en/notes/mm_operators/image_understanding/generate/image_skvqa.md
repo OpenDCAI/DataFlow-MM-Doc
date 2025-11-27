@@ -8,13 +8,13 @@ permalink: /en/mm_operators/generate/image_skvqa/
 
 ## 📘 Overview
 
-`ImageSKVQAGenerate` is an operator designed to generate **Synthetic Knowledge Visual Question Answering (SKVQA)** data.
-Unlike standard Visual Question Answering (VQA), SKVQA integrates external **contextual knowledge** into the question–answer generation process,
-enabling the model to reason based not only on the image itself but also on relevant textual descriptions or background information.
+`ImageSKVQAGenerate` is an operator used to generate **Synthetic Knowledge Visual Question Answering (SKVQA)** data.  
+Unlike standard Visual Question Answering (VQA), SKVQA integrates external **context** information during the QA generation process.  
+This requires the model to answer questions by reasoning not only based on the image content but also by referencing the textual description or background knowledge.
 
-This capability is highly useful for **visual knowledge understanding, product manual QA generation, and multimodal knowledge-enhanced training** tasks.
+This capability is widely applicable in tasks such as **visual knowledge reasoning, product documentation QA generation, and multimodal knowledge-enhanced training**.
 
----
+-----
 
 ## 🏗️ `__init__` Function
 
@@ -28,11 +28,11 @@ def __init__(
 
 ## 🧾 `__init__` Parameters
 
-| Parameter     | Type            | Default | Description                                                                               |
-| :------------ | :-------------- | :------ | :---------------------------------------------------------------------------------------- |
-| `llm_serving` | `LLMServingABC` | -       | The model serving object used to call a Vision-Language Model (VLM) for SKVQA generation. |
+| Parameter     | Type            | Default | Description                                                             |
+| :------------ | :-------------- | :------ | :---------------------------------------------------------------------- |
+| `llm_serving` | `LLMServingABC` | -       | **Model Serving Object** used to call the VLM to generate SKVQA results |
 
----
+-----
 
 ## ⚡ `run` Function
 
@@ -40,51 +40,40 @@ def __init__(
 def run(
     self,
     storage: DataFlowStorage,
-    multi_modal_key: str = "image",
+    input_modal_key: str = "image",
     output_key: str = "skvqa"
 ):
     ...
 ```
 
-Executes the main operator logic to generate structured SKVQA outputs — including contextual text (`context`) and question–answer pairs (`QAs`) — for each input image.
+The `run` function executes the main operator logic, generating structured output (including context and QA pairs) in batches for the input images.
 
----
+-----
 
 ## 🧾 `run` Parameters
 
-| Parameter         | Type              | Default   | Description                                                  |
-| :---------------- | :---------------- | :-------- | :----------------------------------------------------------- |
-| `storage`         | `DataFlowStorage` | -         | The DataFlow storage object.                                 |
-| `multi_modal_key` | `str`             | `"image"` | The multimodal input field name (usually the image path).    |
-| `output_key`      | `str`             | `"skvqa"` | The output field name used to store the parsed SKVQA result. |
+| Parameter         | Type              | Default     | Description                                                     |
+| :---------------- | :---------------- | :---------- | :-------------------------------------------------------------- |
+| `storage`         | `DataFlowStorage` | -           | DataFlow storage object                                         |
+| `input_modal_key` | `str`             | `"image"`   | **Multimodal Input Field Name** (typically the image path)      |
+| `output_key`      | `str`             | `"skvqa"`   | **Output Result Field Name**, used to store the parsed SKVQA results |
 
----
+-----
 
-## 🧠 Operator Functionality
+## 🧠 Operator Functionality Details
 
-* Automatically generates a structured **SKVQA output** for each image, containing:
+  * Automatically constructs prompts for each input image, requiring both **context generation and QA generation**.
 
-  * `context`: Contextual background information or knowledge relevant to the image.
-  * `qas`: A list of question–answer pairs (`question`, `answer`).
+  * After calling the VLM, the built-in `parse_wiki_qa` function is used to automatically parse the model's Markdown structured output, such as sections delimited by: `### Wikipedia Article` and `### Question Answer Pairs`.
 
-* Parses model outputs formatted in Markdown, such as:
+  * A structured **SKVQA output** is generated for each input image, stored under the `output_key` field, including:
 
-  ```
-  ### Wikipedia Article
-  (context text)
+      * `context`: Context relevant to the image content (background description or knowledge snippet).
+      * `qas`: An array of QA pairs, each containing a `question` and an `answer`.
 
-  ### Question Answer Pairs
-  1. **Question**
-     - Answer
-  2. **Question**
-     - Answer
-  ```
+  * Supports fault-tolerant parsing, allowing extraction of valid content even if the output format is not strictly adhered to.
 
-* Supports **fault-tolerant parsing**, meaning even imperfectly formatted text can be interpreted as best as possible.
-
-* Applicable for **visual knowledge enhancement, multimodal training, and QA generation** tasks.
-
----
+-----
 
 ## 🧩 Example Usage
 
@@ -93,42 +82,42 @@ from dataflow.utils.storage import FileStorage
 from dataflow.serving.local_model_vlm_serving import LocalModelVLMServing_vllm
 from dataflow.operators.core_vision.generate.sk_vqa_generator import ImageSKVQAGenerate
 
-# Step 1: Launch a local vision-language model
+# Step 1: Launch local Vision-Language Model
 serving = LocalModelVLMServing_vllm(
-    hf_model_name_or_path="./models/Qwen2.5-VL-3B-Instruct",
+    hf_model_name_or_path="Qwen/Qwen2.5-VL-3B-Instruct", # Use your actual model path
     vllm_tensor_parallel_size=1,
     vllm_temperature=0.7,
     vllm_top_p=0.9,
     vllm_max_tokens=512
 )
 
-# Step 2: Prepare input data
+# Step 2: Prepare input file
 storage = FileStorage(
-    first_entry_file_name="data/example_skvqa.jsonl",
+    first_entry_file_name="dataflow/example/image_to_text_pipeline/capsbench_captions.jsonl",
     cache_path="./cache_skvqa",
     cache_type="jsonl"
 )
 storage.step()
 
-# Step 3: Initialize the operator and run it
+# Step 3: Initialize and run the operator
 skvqa_generator = ImageSKVQAGenerate(serving)
 skvqa_generator.run(
     storage=storage,
-    multi_modal_key="image",
+    input_modal_key="image",
     output_key="skvqa"
 )
 ```
 
----
+-----
 
 ## 🧾 Default Output Format
 
-| Field   | Type             | Description                                                                          |
-| :------ | :--------------- | :----------------------------------------------------------------------------------- |
-| `image` | `List[str]`      | List of input image paths.                                                           |
-| `skvqa` | `Dict[str, Any]` | The structured SKVQA output generated by the model, including context and Q&A pairs. |
+| Field   | Type               | Description                                                                  |
+| :------ | :--------------- | :--------------------------------------------------------------------------- |
+| `image` | `List[str]`      | List of input image paths                                                    |
+| `skvqa` | `Dict[str, Any]` | Model-generated structured SKVQA output, containing `context` and the `qas` array |
 
----
+-----
 
 ### 📥 Example Input
 
@@ -142,22 +131,20 @@ skvqa_generator.run(
 {
   "image": ["./data/product_manual.jpg"],
   "skvqa": {
-    "context": "This is a section from a smartwatch user manual showing the health monitoring interface.",
+    "context": "This is an instruction document about smartwatch features, showing the health monitoring interface.",
     "qas": [
       {"question": "What device is shown in the image?", "answer": "A smartwatch"},
-      {"question": "What are its main features?", "answer": "It supports heart rate monitoring, step tracking, and sleep analysis."},
-      {"question": "What is the main topic of this text?", "answer": "An introduction to smartwatch functions"}
+      {"question": "What are the main functions of this device?", "answer": "It supports heart rate monitoring, step counting, and sleep analysis"},
+      {"question": "What is the topic of this text?", "answer": "Introduction to smartwatch features"}
     ]
   }
 }
 ```
 
----
+## 💡 Key Features Summary
 
-## 💡 Key Features
-
-* ✅ Supports batch image inputs
-* ✅ Automatically generates structured context + Q&A results
-* ✅ Built-in format cleaning and fault tolerance
-* ✅ Compatible with any vision–language model (e.g., Qwen-VL, InternVL, MiniCPM-V)
-* ✅ Ideal for multimodal knowledge enhancement, retrieval QA, and data generation tasks
+  * ✅ **Knowledge Enhancement**: Generates QA pairs combined with external context.
+  * ✅ **Batch Processing**: Supports batch input of images.
+  * ✅ **Structured Output**: Automatically parses and outputs structured `context` + `qas` results.
+  * ✅ **Compatibility**: Compatible with various Multimodal Large Models (e.g., Qwen-VL, InternVL, MiniCPM-V).
+  * ✅ **Wide Application**: Suitable for multimodal knowledge enhancement, retrieval QA, and data generation tasks.

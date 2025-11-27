@@ -59,10 +59,10 @@ def __init__(
 def run(
     self,
     storage: DataFlowStorage,
-    question_key: str = "question",
-    image_key: str = "image",
-    tree_key: Optional[str] = "tree",
-    true_answer_key: str = "true_answer",
+    input_question_key: str = "question",
+    input_image_key: str = "image",
+    input_tree_key: Optional[str] = "tree",
+    input_true_answer_key: str = "true_answer",
     output_key: str = "sft_entry",
 )
 ```
@@ -75,10 +75,10 @@ def run(
 | 参数名               | 类型                | 默认值             | 说明                             |
 | :---------------- | :---------------- | :-------------- | :----------------------------- |
 | `storage`         | `DataFlowStorage` | 无               | DataFlow 的数据存取接口。              |
-| `question_key`    | `str`             | `"question"`    | 样本中问题字段名。                      |
-| `image_key`       | `str`             | `"image"`       | 图像路径字段名。                       |
-| `tree_key`        | `Optional[str]`   | `"tree"`        | 可选，MCTS 树字段；存在时解析其中的 rollouts。 |
-| `true_answer_key` | `str`             | `"true_answer"` | 样本中真实坐标或答案字段名。                 |
+| `input_question_key`    | `str`             | `"question"`    | 样本中问题字段名。                      |
+| `input_image_key`       | `str`             | `"image"`       | 图像路径字段名。                       |
+| `input_tree_key`        | `Optional[str]`   | `"tree"`        | 可选，MCTS 树字段；存在时解析其中的 rollouts。 |
+| `input_true_answer_key` | `str`             | `"true_answer"` | 样本中真实坐标或答案字段名。                 |
 | `output_key`      | `str`             | `"sft_entry"`   | 输出 SFT 条目的字段名。                 |
 
 ---
@@ -106,10 +106,10 @@ op = VisionMCTSReasoningSFTGenerate(
 # 执行
 op.run(
     storage=storage,
-    question_key="question",
-    image_key="image",
-    tree_key="tree",
-    true_answer_key="true_answer",
+    input_question_key="question",
+    input_image_key="image",
+    input_tree_key="tree",
+    input_true_answer_key="true_answer",
     output_key="sft_entry",
 )
 ```

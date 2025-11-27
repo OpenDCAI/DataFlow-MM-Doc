@@ -56,9 +56,9 @@ def __init__(
 def run(
     self,
     storage: DataFlowStorage,
-    question_key: str = "question",
-    answer_key: str = "answer",
-    image_key: str = "image",
+    input_question_key: str = "question",
+    input_answer_key: str = "answer",
+    input_image_key: str = "image",
     output_key: str = "gcot",
     save_intermediate: bool = True,
     qwen_unload_callback = None
@@ -77,9 +77,9 @@ def run(
 | 参数名                  | 类型              | 默认值        | 说明                                       |
 | :---------------------- | :---------------- | :------------ | :-----------------------------------------|
 | `storage`               | `DataFlowStorage` | -             | 数据流存储对象                             |
-| `question_key`          | `str`             | `"question"`  | 输入问题字段名                             |
-| `answer_key`            | `str`             | `"answer"`    | 输入答案字段名                             |
-| `image_key`             | `str`             | `"image"`     | 输入图像字段名                             |
+| `input_question_key`          | `str`             | `"question"`  | 输入问题字段名                             |
+| `input_answer_key`            | `str`             | `"answer"`    | 输入答案字段名                             |
+| `input_image_key`             | `str`             | `"image"`     | 输入图像字段名                             |
 | `output_key`            | `str`             | `"gcot"`      | 输出 GCoT 字段名                          |
 | `save_intermediate`     | `bool`            | `True`        | 是否保存中间结果和可视化                   |
 | `qwen_unload_callback`  | `Callable`        | `None`        | Qwen 模型卸载回调函数（用于释放显存）       |

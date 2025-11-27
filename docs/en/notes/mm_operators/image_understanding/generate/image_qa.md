@@ -7,10 +7,17 @@ permalink: /en/mm_operators/generate/image_qa/
 
 ## 📘 Overview
 
-`ImageQAGenerate` is an operator for **automatically generating question-answer pairs (Visual QA) based on image content**.  
-It can intelligently ask relevant questions about the image scene and generate reference answers. This is suitable for multimodal QA dataset construction, retrieval augmentation, and image-text matching enhancement.
+`ImageQAGenerate` is an operator designed to **automatically generate Question-Answer (QA) pairs based on image content (Visual QA)**.  
+It intelligently proposes relevant questions based on the image scene and generates corresponding reference answers.
 
----
+**Features:**
+
+  * Supports batch processing of multiple images.
+  * Automatically generates relevant QA pairs using Vision-Language Models (VLMs).
+  * Applicable for Visual QA dataset construction and model training.
+  * Automatically handles image input and QA prompt construction.
+
+-----
 
 ## 🏗️ `__init__` Function
 
@@ -24,11 +31,11 @@ def __init__(
 
 ## 🧾 `__init__` Parameters
 
-| Parameter     | Type            | Default | Description                                                                 |
-| :------------ | :-------------- | :------ | :-------------------------------------------------------------------------- |
-| `llm_serving` | `LLMServingABC` | -       | Model serving object used to call a vision-language model for QA generation |
+| Parameter     | Type            | Default | Description                                                     |
+| :------------ | :-------------- | :------ | :-------------------------------------------------------------- |
+| `llm_serving` | `LLMServingABC` | -       | **Model Serving Object** used to call the VLM for QA generation |
 
----
+-----
 
 ## ⚡ `run` Function
 
@@ -36,23 +43,23 @@ def __init__(
 def run(
     self,
     storage: DataFlowStorage,
-    multi_modal_key: str = "image",
-    output_key: str = "qa_pairs"
+    input_modal_key: str = "image",
+    output_key: str = "output"
 ):
     ...
 ```
 
-The `run` function executes the main QA generation workflow: generates multiple QA pairs for the input images and writes them to the output file.
+The `run` function executes the main operator logic: read image paths → **validate DataFrame** → construct prompts → call the model → generate Visual QA pairs and write them to the output file.
 
 ## 🧾 `run` Parameters
 
-| Parameter         | Type              | Default      | Description                    |
-| :---------------- | :---------------- | :----------- | :----------------------------- |
-| `storage`         | `DataFlowStorage` | -            | Dataflow storage object        |
-| `multi_modal_key` | `str`             | `"image"`    | Multimodal input field name    |
-| `output_key`      | `str`             | `"qa_pairs"` | Output field name for QA pairs |
+| Parameter         | Type              | Default     | Description                                                               |
+| :---------------- | :---------------- | :---------- | :------------------------------------------------------------------------ |
+| `storage`         | `DataFlowStorage` | -           | Dataflow storage object                                                   |
+| `input_modal_key` | `str`             | `"image"`   | **Multimodal Input Field Name** (e.g., image paths)                       |
+| `output_key`      | `str`             | `"output"`  | **Output QA Field Name** (defaults to `output`, can be customized)        |
 
----
+-----
 
 ## 🧠 Example Usage
 
@@ -63,7 +70,7 @@ from dataflow.operators.core_vision import ImageQAGenerate
 
 # Step 1: Launch local model service
 serving = LocalModelVLMServing_vllm(
-    hf_model_name_or_path="./models/Qwen2.5-VL-3B-Instruct",
+    hf_model_name_or_path="Qwen/Qwen2.5-VL-3B-Instruct",
     vllm_tensor_parallel_size=1,
     vllm_temperature=0.7,
     vllm_top_p=0.9,
@@ -72,34 +79,34 @@ serving = LocalModelVLMServing_vllm(
 
 # Step 2: Prepare input data
 storage = FileStorage(
-    first_entry_file_name="data/example_qa.jsonl",
+    first_entry_file_name="dataflow/example/Image2TextPipeline/test_image2qa.jsonl",
     cache_path="./cache_local",
     file_name_prefix="imageqa",
     cache_type="jsonl",
-    media_key="image",
-    media_type="image"
 )
-storage.step()
+storage.step() # Load data
 
 # Step 3: Initialize and run the operator
 qa_generator = ImageQAGenerate(serving)
 qa_generator.run(
     storage=storage,
-    multi_modal_key="image",
-    output_key="qa_pairs"
+    input_modal_key="image",
+    output_key="qa_pairs" # Explicitly specifying output field as "qa_pairs" in the example
 )
 ```
 
----
+-----
 
 ## 🧾 Default Output Format
 
-| Field      | Type                   | Description                                                        |
-| :--------- | :--------------------- | :----------------------------------------------------------------- |
-| `image`    | `List[str]`            | Input image paths                                                  |
-| `qa_pairs` | `List[Dict[str, str]]` | Generated QA pairs, each containing `question` and `answer` fields |
+| Field      | Type                     | Description                                                          |
+| :--------- | :--------------------- | :------------------------------------------------------------------- |
+| `image`    | `List[str]`            | Input image paths                                                    |
+| `qa_pairs` | `List[Dict[str, str]]` | Generated QA pairs, containing `question` and `answer` fields        |
 
----
+> **Note:** The raw output from the model (`output_key`) is typically a single string containing all QA pairs. A subsequent operator (like `JsonParser`) is usually required to structure this output into the `List[Dict[str, str]]` format shown here.
+
+-----
 
 ### 📥 Example Input
 
@@ -107,15 +114,15 @@ qa_generator.run(
 {"image": ["./test/street_scene.jpg"]}
 ```
 
-### 📤 Example Output
+### 📤 Example Output (Structured)
 
 ```jsonl
 {
   "image": ["./test/street_scene.jpg"],
   "qa_pairs": [
-    {"question": "How many cars are in the image?", "answer": "Two"},
-    {"question": "What kind of scene is captured in this photo?", "answer": "City street"},
-    {"question": "What is the main type of transportation in the image?", "answer": "Cars"}
+    {"question": "How many cars are in the image?", "answer": "Two cars"},
+    {"question": "What is the scene depicted in this photo?", "answer": "A city street"},
+    {"question": "What is the main mode of transportation shown?", "answer": "A car"}
   ]
 }
 ```

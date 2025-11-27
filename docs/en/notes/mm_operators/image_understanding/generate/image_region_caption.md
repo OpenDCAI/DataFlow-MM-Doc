@@ -36,8 +36,8 @@ def __init__(
 def run(
     self, 
     storage: DataFlowStorage, 
-    image_key: str = "image", 
-    bbox_key: str = "bbox", 
+    input_image_key: str = "image", 
+    input_bbox_key: str = "bbox", 
     output_key: str = "mdvp_record"
 ):
 ```
@@ -47,8 +47,8 @@ def run(
 | Parameter | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
 | storage | DataFlowStorage | No default (required) | Storage instance for file operations and cache path management |
-| image_key | str | "image" | Field name for image path in input JSONL data |
-| bbox_key | str | "bbox" | Field name for bounding boxes in input data. If missing, automatically extracts from image |
+| input_image_key | str | "image" | Field name for image path in input JSONL data |
+| input_bbox_key | str | "bbox" | Field name for bounding boxes in input data. If missing, automatically extracts from image |
 | output_key | str | "mdvp_record" | Field name for output region caption records in result data |
 
 
@@ -88,8 +88,8 @@ operator = ImageRegionCaptionGenerate(llm_serving=model, config=cfg)
 
 operator.run(
     storage=storage.step(),
-    image_key="image",
-    bbox_key="bbox",
+    input_image_key="image",
+    input_bbox_key="bbox",
     output_key="mdvp_record"
 )
 

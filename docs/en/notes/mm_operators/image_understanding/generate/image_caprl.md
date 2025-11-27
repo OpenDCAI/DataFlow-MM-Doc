@@ -64,7 +64,7 @@ class CapRLMCQGenerate(OperatorABC):
 def run(
     self,
     storage: DataFlowStorage,
-    image_key: str = "image",
+    input_image_key: str = "image",
     output_key: str = "cap_rl_qa",
 ):
     ...
@@ -79,7 +79,7 @@ Reads images, generates MCQs, parses, rotates, validates under both conditions, 
 | Parameter  | Type              | Default       | Description                                |
 | ---------- | ----------------- | ------------- | ------------------------------------------ |
 | storage    | `DataFlowStorage` | required      | IO and caching.                            |
-| image_key  | str               | `"image"`     | Input field (image path).                  |
+| input_image_key  | str               | `"image"`     | Input field (image path).                  |
 | output_key | str               | `"cap_rl_qa"` | Output field to store the full stats JSON. |
 
 ---
@@ -111,7 +111,7 @@ cfg = CapRLMCQConfig(
 )
 
 op = CapRLMCQGenerate(serving, cfg)
-op.run(storage=storage.step(), image_key="image", output_key="cap_rl_qa")
+op.run(storage=storage.step(), input_image_key="image", output_key="cap_rl_qa")
 ```
 
 ---

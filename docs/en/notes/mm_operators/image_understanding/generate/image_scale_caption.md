@@ -66,7 +66,7 @@ Returns the operator description in either Chinese or English.
 def run(
     self, 
     storage: DataFlowStorage,
-    image_key: str = "image", 
+    input_image_key: str = "image", 
     output_key: str = "scalecap_record"
 )
 ```
@@ -76,7 +76,7 @@ def run(
 | Parameter    | Type              | Default             | Description                                               |
 | ------------ | ----------------- | ------------------- | --------------------------------------------------------- |
 | `storage`    | `DataFlowStorage` | —                   | DataFlow storage interface for reading and writing data.  |
-| `image_key`  | `str`             | `"image"`           | The column name for image paths in the input.             |
+| `input_image_key`  | `str`             | `"image"`           | The column name for image paths in the input.             |
 | `output_key` | `str`             | `"scalecap_record"` | The column name where the generated captions are written. |
 
 ---
@@ -107,7 +107,7 @@ operator = ImageScaleCaptionGenerate(vlm_serving=model, config=cfg)
 # Run the operator
 operator.run(
     storage=storage,
-    image_key="image",
+    input_image_key="image",
     output_key="scalecap_record"
 )
 ```

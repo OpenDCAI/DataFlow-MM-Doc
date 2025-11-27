@@ -77,7 +77,7 @@ class CapRLMCQConfig:
 def run(
     self,
     storage: DataFlowStorage,
-    image_key: str = "image",
+    input_image_key: str = "image",
     output_key: str = "cap_rl_qa",
 ):
     ...
@@ -93,7 +93,7 @@ def run(
 | 参数名        | 类型                | 默认值           | 说明               |
 | ---------- | ----------------- | ------------- | ---------------- |
 | storage    | `DataFlowStorage` | 必填            | 读写与缓存。           |
-| image_key  | str               | `"image"`     | 输入字段名（图像路径）。     |
+| input_image_key  | str               | `"image"`     | 输入字段名（图像路径）。     |
 | output_key | str               | `"cap_rl_qa"` | 输出字段名（写入整个统计结构）。 |
 
 ---
@@ -135,7 +135,7 @@ cfg = CapRLMCQConfig(
 op = CapRLMCQGenerate(vlm_serving=serving, config=cfg)
 
 # 5) Run（DataFrame 驱动：storage.step()）
-op.run(storage=storage.step(), image_key="image", output_key="cap_rl_qa")
+op.run(storage=storage.step(), input_image_key="image", output_key="cap_rl_qa")
 ```
 
 ---
