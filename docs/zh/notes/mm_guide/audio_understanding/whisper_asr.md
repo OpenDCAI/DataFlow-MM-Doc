@@ -7,70 +7,68 @@ permalink: /zh/mm_guide/dl0jhc6u/
 
 ## 使用Whisper进行语音转录或翻译
 
-## 第一步: 准备Dataflow环境
-```bash
-conda create -n myvenv python=3.12
-pip install open-dataflow
-pip install open-dataflow[vllm]
+## 第一步: 安装环境
+见[Audio环境安装](./install_audio_understanding.md)
+
+## 第二步: 导入包
+```python
+from dataflow.operators.core_audio import PromptedAQAGenerator
+from dataflow.serving import LocalModelVLMServing_vllm
+from dataflow.utils.storage import FileStorage
+from dataflow.prompts.audio import WhisperTranscriptionPrompt
 ```
 
-## 第二步: 安装Dataflow音频模块
-```bash
-pip install open-dataflow[audio]
-```
-
-## 第三步: 启动本地模型服务
+## 第二步: 启动本地模型服务
 本地模型调用服务方法如下:
 ```python
-llm_serving = LocalModelLLMServing_vllm(
-    hf_model_name_or_path="./models/whisper-large-v3", # set to your own model path
+vlm_serving = LocalModelVLMServing_vllm(
+    hf_model_name_or_path="opennai/whisper-large-v3", 
+    hf_cache_dir='./dataflow_cache',
     vllm_tensor_parallel_size=2,
-    vllm_max_tokens=None,
-    vllm_gpu_memory_utilization=0.7
+    vllm_temperature=0.3,
+    vllm_top_p=0.9,
+    vllm_max_tokens=512,
+    vllm_max_model_len=448,
+    vllm_gpu_memory_utilization=0.9
 )
 ```
 
-## 第四步: 按如下格式填写音频路径, 准备需要进行音频转录或翻译的数据
+## 第三步: 按如下格式填写音频路径, 准备需要进行音频转录或翻译的数据
 ```jsonl
-{"audio": ["your_audio_path"]}
+{"conversation": [{"from": "human", "value": "<audio>"}], "audio": ["https://raw.githubusercontent.com/gty1829/DataFlow-MM/df-audio-dev-1/dataflow/example/whisper_transcription/BAC009S0022W0165.wav"]}
+
 ```
 
-## 第五步: 按下述格式将数据路径填入FileStorage中
+## 第四步: 按下述格式将数据路径填入FileStorage中
 ```python
 storage = FileStorage(
-    first_entry_file_name="your_path",
+    first_entry_file_name="./dataflow/example/whisper_transcription/sample_data.jsonl",
     cache_path="./cache",
     file_name_prefix="whisper_transcription",
     cache_type="jsonl",
-    media_key="audio",
-    media_type="audio"
 )
 ```
 
-## 第六步: 初始化WhisperTranscriptionGenerator算子
+## 第五步: 初始化PromptedAQAGenerator算子
 ```python
-generator = WhisperTranscriptionGenerator(self.llm_serving)
+prompt_generator = PromptedAQAGenerator(
+    vlm_serving=vlm_serving,
+    system_prompt=WhisperTranscriptionPrompt().generate_prompt(
+        language="mandarin", 
+        task="transcribe",          # task选择translate, 模型会把输入语音自动翻译为英文文本
+        with_timestamps=False
+    )
+)
 ```
 
-## 第七步: 执行算子
+## 第六步: 执行算子
 语音转录文字
 ```python
-generator.run(
-    storage=self.storage.step(), 
-    task="transcribe",              # 表明当前任务是语音转录
-    language="mandarin",            # 语音的语言, 默认为"english"
-    use_no_time_stamps=True,        # 是否使用无时间戳的输出格式, 默认为True
-    output_key="transcription"      # 输出结果的key
-)
-```
-
-语音翻译, 将语音中的语言翻译为英文
-```python
-generator.run(
-    storage=self.storage.step(), 
-    task="translate",               # 表明当前任务是语音翻译
-    language="mandarin",            # 语音的语言, 默认为"english"
-    use_no_time_stamps=True,        # 是否使用无时间戳的输出格式, 默认为True
-    output_key="transcription"      # 输出结果的key
+prompt_generator.run(
+    storage = self.storage.step(),
+    input_audio_key="audio",
+    input_conversation_key="conversation",
+    output_answer_key="answer",
+    storage=storage.step(), 
 )
 ```

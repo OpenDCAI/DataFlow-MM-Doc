@@ -60,6 +60,18 @@ export const enNavbar = defineNavbarConfig([
                         icon: 'material-symbols:auto-transmission-sharp',
                         activeMatch: '^/guide/'
                     },
+                    {
+                        text: 'Video Filtering Operators',
+                        link:'/en/notes/mm_operators/video_filtering/video_filtering_operators.md',
+                        icon: 'material-symbols:video-camera-back',
+                        activeMatch:'^/guide/'
+                    },
+                    {
+                        text: 'Video Quality Evaluation Operators',
+                        link:'/en/notes/mm_operators/video_eval/video_quality_evaluation_operators.md',
+                        icon: 'material-symbols:compare',
+                        activeMatch:'^/guide/'
+                    },
                 ]
             },
         ]
