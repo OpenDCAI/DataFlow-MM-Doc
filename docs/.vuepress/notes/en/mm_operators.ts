@@ -65,6 +65,18 @@ export const MMOperators: ThemeNote = defineNoteConfig({
                     ]
                 },
                 {
+                    text: "eval",
+                    collapsed: false,
+                    prefix: 'eval/',
+                    items: [
+                        'general_text_answer_evaluator',
+                        'emscore_evaluator',
+                        'video_aesthetic_evaluator',
+                        'video_luminance_evaluator',
+                        'video_ocr_evaluator',
+                    ]
+                },
+                {
                     text: "filter",
                     collapsed: false,
                     prefix: 'filter/',
