@@ -1,7 +1,6 @@
 ---
 title: Video Scene Filter (VideoSceneFilter)
 createTime: 2025/01/20 10:00:00
-icon: material-symbols-light:movie-edit
 permalink: /en/mm_operators/video_understanding/filter/video_scene_filter/
 ---
 
@@ -27,7 +26,8 @@ def __init__(
     video_info_key: str = "video_info",
     output_key: str = "video_scene",
     use_adaptive_detector: bool = True,
-    overlap: bool = False
+    overlap: bool = False,
+    use_fixed_interval: bool = False
 ):
     ...
 ```
@@ -47,7 +47,8 @@ def __init__(
 | `video_info_key`       | `str`    | `"video_info"`     | Field name for video information (optional, for fps) |
 | `output_key`           | `str`    | `"video_scene"`    | Field name for output video scene information   |
 | `use_adaptive_detector` | `bool`   | `True`             | Whether to use adaptive detector (AdaptiveDetector) |
-| `overlap`              | `bool`   | `False`            | Whether to use overlap splitting strategy      |
+| `overlap`              | `bool`   | `False`            | Whether to use overlap splitting strategy. When scene duration exceeds `max_seconds`:<br>- `True`: Split from start time with `max_seconds` step size, creating multiple segments<br>- `False`: Split long scenes evenly without overlap between segments      |
+| `use_fixed_interval`   | `bool`   | `False`            | Whether to use fixed interval splitting (instead of scene detection) |
 
 ---
 
@@ -60,7 +61,8 @@ def run(
     input_video_key: Optional[str] = None,
     video_info_key: Optional[str] = None,
     output_key: Optional[str] = None,
-    overlap: Optional[bool] = None
+    overlap: Optional[bool] = None,
+    use_fixed_interval: Optional[bool] = None
 ):
     ...
 ```
@@ -75,7 +77,8 @@ Executes the main logic: reads data from storage, detects scene transition point
 | `input_video_key` | `Optional[str]`     | `None`     | Field name for video paths (overrides init param) |
 | `video_info_key`  | `Optional[str]`     | `None`     | Field name for video information (overrides init param) |
 | `output_key`      | `Optional[str]`     | `None`     | Field name for output (overrides init param)   |
-| `overlap`         | `Optional[bool]`    | `None`     | Whether to use overlap splitting strategy (overrides init param) |
+| `overlap`         | `Optional[bool]`    | `None`     | Whether to use overlap splitting strategy (overrides init param). When scene duration exceeds `max_seconds`:<br>- `True`: Split from start time with `max_seconds` step size, creating multiple segments<br>- `False`: Split long scenes evenly without overlap between segments |
+| `use_fixed_interval` | `Optional[bool]` | `None`     | Whether to use fixed interval splitting (overrides init param) |
 
 ---
 
@@ -106,7 +109,8 @@ filter_op = VideoSceneFilter(
     video_info_key="video_info",
     output_key="video_scene",
     use_adaptive_detector=True,
-    overlap=False
+    overlap=False,
+    use_fixed_interval=False
 )
 
 # Step 3: Execute scene detection

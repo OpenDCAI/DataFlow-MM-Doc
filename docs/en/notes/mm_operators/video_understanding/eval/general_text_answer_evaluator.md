@@ -1,7 +1,6 @@
 ---
 title: General Text Answer Evaluator (GeneralTextAnswerEvaluator)
 createTime: 2025/01/20 11:00:00
-icon: material-symbols-light:check-circle
 permalink: /en/mm_operators/video_understanding/eval/general_text_answer_evaluator/
 ---
 

@@ -1,7 +1,6 @@
 ---
 title: 视频质量分数过滤（VideoScoreFilter）
 createTime: 2025/01/20 10:00:00
-icon: material-symbols-light:filter-list
 permalink: /zh/mm_operators/video_understanding/filter/video_score_filter/
 ---
 

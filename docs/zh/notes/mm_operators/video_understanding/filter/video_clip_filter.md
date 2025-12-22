@@ -1,7 +1,6 @@
 ---
 title: 视频片段过滤（VideoClipFilter）
 createTime: 2025/01/20 10:00:00
-icon: material-symbols-light:movie-filter
 permalink: /zh/mm_operators/video_understanding/filter/video_clip_filter/
 ---
 

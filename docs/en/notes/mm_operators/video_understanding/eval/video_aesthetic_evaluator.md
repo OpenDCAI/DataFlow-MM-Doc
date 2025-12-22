@@ -1,7 +1,6 @@
 ---
 title: Video Aesthetic Evaluator (VideoAestheticEvaluator)
 createTime: 2025/01/20 11:00:00
-icon: material-symbols-light:palette
 permalink: /en/mm_operators/video_understanding/eval/video_aesthetic_evaluator/
 ---
 
@@ -68,7 +67,8 @@ storage = FileStorage(
 
 evaluator = VideoAestheticEvaluator(
     figure_root="./cache/extract_frames",
-    clip_model="ViT-L/14",
+    clip_model="/path/to/ViT-L-14.pt",
+    mlp_checkpoint="/path/to/sac+logos+ava1-l14-linearMSE.pth",
     load_num=3,
     batch_size=64
 )

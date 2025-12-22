@@ -1,7 +1,6 @@
 ---
 title: 视频美学评估器（VideoAestheticEvaluator）
 createTime: 2025/01/20 11:00:00
-icon: material-symbols-light:palette
 permalink: /zh/mm_operators/video_understanding/eval/video_aesthetic_evaluator/
 ---
 
@@ -95,8 +94,8 @@ evaluator = VideoAestheticEvaluator(
     figure_root="./cache/extract_frames",
     input_video_key="video",
     video_clips_key="video_clips",
-    clip_model="ViT-L/14",
-    mlp_checkpoint=None,  # 可选：提供预训练权重
+    clip_model="/path/to/ViT-L-14.pt",
+    mlp_checkpoint="/path/to/sac+logos+ava1-l14-linearMSE.pth",
     load_num=3,
     batch_size=64,
     num_workers=4,

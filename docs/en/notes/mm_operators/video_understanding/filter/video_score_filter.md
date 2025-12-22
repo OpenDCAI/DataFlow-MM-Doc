@@ -1,7 +1,6 @@
 ---
 title: Video Score Filter (VideoScoreFilter)
 createTime: 2025/01/20 10:00:00
-icon: material-symbols-light:filter-list
 permalink: /en/mm_operators/video_understanding/filter/video_score_filter/
 ---
 

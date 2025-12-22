@@ -1,7 +1,6 @@
 ---
 title: Video Info Filter (VideoInfoFilter)
 createTime: 2025/01/20 10:00:00
-icon: material-symbols-light:info-outline
 permalink: /en/mm_operators/video_understanding/filter/video_info_filter/
 ---
 
@@ -17,11 +16,10 @@ permalink: /en/mm_operators/video_understanding/filter/video_info_filter/
 def __init__(
     self,
     backend: str = "opencv",
-    input_video_key: str = "video",
-    output_key: str = "video_info",
-    ext: bool = False,
     disable_parallel: bool = False,
-    num_workers: Optional[int] = None
+    num_workers: int = 16,
+    seed: int = 42,
+    ext: bool = False
 ):
     ...
 ```
@@ -31,11 +29,10 @@ def __init__(
 | Parameter         | Type              | Default            | Description                                    |
 | :---------------- | :---------------- | :----------------- | :--------------------------------------------- |
 | `backend`        | `str`             | `"opencv"`         | Backend selection: `"opencv"`, `"torchvision"`, or `"av"` |
-| `input_video_key` | `str`             | `"video"`          | Field name for video paths in input data       |
-| `output_key`     | `str`             | `"video_info"`     | Field name for output video information        |
-| `ext`            | `bool`            | `False`            | Whether to filter out non-existent video file paths |
 | `disable_parallel` | `bool`            | `False`            | Whether to disable parallel processing          |
-| `num_workers`    | `Optional[int]`   | `None`             | Number of workers for parallel processing, defaults to CPU count |
+| `num_workers`    | `int`   | `16`             | Number of workers for parallel processing |
+| `seed`           | `int`             | `42`               | Random seed                                    |
+| `ext`            | `bool`            | `False`            | Whether to filter out non-existent video file paths |
 
 ---
 
@@ -45,8 +42,8 @@ def __init__(
 def run(
     self,
     storage: DataFlowStorage,
-    input_video_key: Optional[str] = None,
-    output_key: Optional[str] = None
+    input_video_key: str = "video",
+    output_key: str = "video_info"
 ):
     ...
 ```
@@ -58,8 +55,8 @@ Executes the main logic: reads data from storage, extracts metadata information 
 | Parameter         | Type                | Default    | Description                                    |
 | :---------------- | :------------------ | :--------- | :--------------------------------------------- |
 | `storage`         | `DataFlowStorage`   | -          | DataFlow storage object                        |
-| `input_video_key` | `Optional[str]`     | `None`     | Field name for video paths (overrides init param) |
-| `output_key`      | `Optional[str]`     | `None`     | Field name for output (overrides init param)   |
+| `input_video_key` | `str`     | `"video"`     | Field name for video paths in input data |
+| `output_key`      | `str`     | `"video_info"`     | Field name for output video information   |
 
 ---
 
@@ -80,16 +77,17 @@ storage = FileStorage(
 # Step 2: Initialize operator
 filter_op = VideoInfoFilter(
     backend="opencv",
-    input_video_key="video",
-    output_key="video_info",
-    ext=False,
     disable_parallel=False,
-    num_workers=None
+    num_workers=16,
+    seed=42,
+    ext=False
 )
 
 # Step 3: Execute information extraction
 filter_op.run(
-    storage=storage.step()
+    storage=storage.step(),
+    input_video_key="video",
+    output_key="video_info"
 )
 ```
 

@@ -1,13 +1,12 @@
 ---
-title: 视频描述生成
+title: 视频描述生成（VideoToCaptionGenerator）
 createTime: 2025/07/16 14:50:59
-icon: material-symbols-light:interpreter-mode
 permalink: /zh/mm_operators/video_understanding/generate/video_caption/
 ---
 
 ## 📘 概述
 
-`VideoToCaptionGenerator` 是一个用于**调用视觉语言大模型自动生成视频描述（Video Caption）**的算子。  
+`VideoToCaptionGenerator` 是一个用于 **调用视觉语言大模型自动生成视频描述（Video Caption）** 的算子。  
 它会根据输入视频，自动构建提示词，引导模型输出高质量的视频内容描述，适用于视频标注、多模态数据集构建、视频理解等场景。
 
 ---
@@ -40,7 +39,6 @@ def run(
     storage: DataFlowStorage,
     input_image_key: str = "image",
     input_video_key: str = "video",
-    input_audio_key: str = "audio",
     input_conversation_key: str = "conversation",
     output_key: str = "caption"
 ):
@@ -57,7 +55,6 @@ def run(
 | `storage`                | `DataFlowStorage` | -                | Dataflow 数据存储对象 |
 | `input_image_key`        | `str`             | `"image"`        | 输入数据中图像字段名      |
 | `input_video_key`        | `str`             | `"video"`        | 输入数据中视频字段名      |
-| `input_audio_key`        | `str`             | `"audio"`        | 输入数据中音频字段名      |
 | `input_conversation_key` | `str`             | `"conversation"` | 输入数据中对话字段名      |
 | `output_key`             | `str`             | `"caption"`      | 模型输出字段名         |
 
@@ -165,14 +162,6 @@ video_caption_generator = VideoToCaptionGenerator(
 
 ---
 
-## 📝 注意事项
-
-1. ✅ 输入数据必须包含 `conversation` 字段，格式为对话列表
-2. ✅ 视频文件路径需要是可访问的本地路径或URL
-3. ✅ VLM模型需要支持视频输入（如Qwen2.5-VL系列）
-4. ✅ 根据显存大小调整 `vllm_gpu_memory_utilization` 和 `vllm_tensor_parallel_size`
-
----
 
 ## 🔗 相关链接
 

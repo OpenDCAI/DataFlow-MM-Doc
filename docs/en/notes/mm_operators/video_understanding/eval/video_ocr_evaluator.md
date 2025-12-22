@@ -1,7 +1,6 @@
 ---
 title: Video OCR Evaluator (VideoOCREvaluator)
 createTime: 2025/01/20 11:00:00
-icon: material-symbols-light:text-fields
 permalink: /en/mm_operators/video_understanding/eval/video_ocr_evaluator/
 ---
 

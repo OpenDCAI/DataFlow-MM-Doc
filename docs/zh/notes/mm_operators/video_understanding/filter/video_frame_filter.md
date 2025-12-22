@@ -1,7 +1,6 @@
 ---
 title: 视频帧提取（VideoFrameFilter）
 createTime: 2025/01/20 10:00:00
-icon: material-symbols-light:photo-camera
 permalink: /zh/mm_operators/video_understanding/filter/video_frame_filter/
 ---
 

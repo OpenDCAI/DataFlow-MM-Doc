@@ -62,6 +62,10 @@ export const MMOperators: ThemeNote = defineNoteConfig({
                     prefix: 'generate/',
                     items: [
                         'video_caption',
+                        'video_merged_caption',
+                        'video_qa',
+                        'video_cotqa',
+                        'video_clip'
                     ]
                 },
                 {

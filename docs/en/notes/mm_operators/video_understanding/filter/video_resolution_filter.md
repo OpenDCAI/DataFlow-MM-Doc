@@ -1,7 +1,6 @@
 ---
 title: Video Resolution Filter (VideoResolutionFilter)
 createTime: 2025/01/20 10:00:00
-icon: material-symbols-light:video-camera-back
 permalink: /en/mm_operators/video_understanding/filter/video_resolution_filter/
 ---
 

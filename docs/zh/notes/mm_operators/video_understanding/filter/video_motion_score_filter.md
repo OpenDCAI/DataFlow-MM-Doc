@@ -1,7 +1,6 @@
 ---
 title: 视频运动分数过滤（VideoMotionScoreFilter）
 createTime: 2025/01/20 10:00:00
-icon: material-symbols-light:motion-photos-on
 permalink: /zh/mm_operators/video_understanding/filter/video_motion_score_filter/
 ---
 

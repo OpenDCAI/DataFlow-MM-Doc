@@ -1,7 +1,6 @@
 ---
 title: Video Luminance Evaluator (VideoLuminanceEvaluator)
 createTime: 2025/01/20 11:00:00
-icon: material-symbols-light:wb-sunny
 permalink: /en/mm_operators/video_understanding/eval/video_luminance_evaluator/
 ---
 

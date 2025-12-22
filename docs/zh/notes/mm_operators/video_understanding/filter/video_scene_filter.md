@@ -1,7 +1,6 @@
 ---
 title: 视频场景检测（VideoSceneFilter）
 createTime: 2025/01/20 10:00:00
-icon: material-symbols-light:movie-edit
 permalink: /zh/mm_operators/video_understanding/filter/video_scene_filter/
 ---
 
@@ -27,7 +26,8 @@ def __init__(
     video_info_key: str = "video_info",
     output_key: str = "video_scene",
     use_adaptive_detector: bool = True,
-    overlap: bool = False
+    overlap: bool = False,
+    use_fixed_interval: bool = False
 ):
     ...
 ```
@@ -47,7 +47,8 @@ def __init__(
 | `video_info_key`       | `str`   | `"video_info"` | 输入数据中视频信息字段名（可选，用于获取 fps）              |
 | `output_key`           | `str`   | `"video_scene"` | 输出视频场景信息字段名                            |
 | `use_adaptive_detector` | `bool`  | `True`         | 是否使用自适应检测器（AdaptiveDetector）            |
-| `overlap`              | `bool`  | `False`        | 是否使用重叠切分策略                              |
+| `overlap`              | `bool`  | `False`        | 是否使用重叠切分策略。当场景时长超过 `max_seconds` 时：<br>- `True`：从起始时间开始，以 `max_seconds` 为步长连续切分多个片段<br>- `False`：将长场景均匀切分，片段之间不重叠                              |
+| `use_fixed_interval`   | `bool`  | `False`        | 是否使用固定间隔切分（而非场景检测）                      |
 
 ---
 
@@ -60,7 +61,8 @@ def run(
     input_video_key: Optional[str] = None,
     video_info_key: Optional[str] = None,
     output_key: Optional[str] = None,
-    overlap: Optional[bool] = None
+    overlap: Optional[bool] = None,
+    use_fixed_interval: Optional[bool] = None
 ):
     ...
 ```
@@ -75,7 +77,8 @@ def run(
 | `input_video_key` | `Optional[str]`   | `None` | 视频路径字段名（覆盖初始化参数）                        |
 | `video_info_key`  | `Optional[str]`   | `None` | 视频信息字段名（覆盖初始化参数）                         |
 | `output_key`      | `Optional[str]`   | `None` | 输出字段名（覆盖初始化参数）                           |
-| `overlap`         | `Optional[bool]`  | `None` | 是否使用重叠切分策略（覆盖初始化参数）                      |
+| `overlap`         | `Optional[bool]`  | `None` | 是否使用重叠切分策略（覆盖初始化参数）。当场景时长超过 `max_seconds` 时：<br>- `True`：从起始时间开始，以 `max_seconds` 为步长连续切分多个片段<br>- `False`：将长场景均匀切分，片段之间不重叠                      |
+| `use_fixed_interval` | `Optional[bool]` | `None` | 是否使用固定间隔切分（覆盖初始化参数）                      |
 
 ---
 
@@ -106,7 +109,8 @@ filter_op = VideoSceneFilter(
     video_info_key="video_info",
     output_key="video_scene",
     use_adaptive_detector=True,
-    overlap=False
+    overlap=False,
+    use_fixed_interval=False
 )
 
 # Step 3: 执行场景检测

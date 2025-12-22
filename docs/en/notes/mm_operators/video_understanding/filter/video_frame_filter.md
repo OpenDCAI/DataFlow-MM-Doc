@@ -1,7 +1,6 @@
 ---
 title: Video Frame Filter (VideoFrameFilter)
 createTime: 2025/01/20 10:00:00
-icon: material-symbols-light:photo-camera
 permalink: /en/mm_operators/video_understanding/filter/video_frame_filter/
 ---
 

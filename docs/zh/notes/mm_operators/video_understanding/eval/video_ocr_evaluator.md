@@ -1,7 +1,6 @@
 ---
 title: 视频OCR评估器（VideoOCREvaluator）
 createTime: 2025/01/20 11:00:00
-icon: material-symbols-light:text-fields
 permalink: /zh/mm_operators/video_understanding/eval/video_ocr_evaluator/
 ---
 

@@ -1,7 +1,6 @@
 ---
 title: 视频分辨率过滤（VideoResolutionFilter）
 createTime: 2025/01/20 10:00:00
-icon: material-symbols-light:video-camera-back
 permalink: /zh/mm_operators/video_understanding/filter/video_resolution_filter/
 ---
 

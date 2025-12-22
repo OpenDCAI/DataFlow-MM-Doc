@@ -1,7 +1,6 @@
 ---
 title: 视频信息提取（VideoInfoFilter）
 createTime: 2025/01/20 10:00:00
-icon: material-symbols-light:info-outline
 permalink: /zh/mm_operators/video_understanding/filter/video_info_filter/
 ---
 
@@ -17,11 +16,10 @@ permalink: /zh/mm_operators/video_understanding/filter/video_info_filter/
 def __init__(
     self,
     backend: str = "opencv",
-    input_video_key: str = "video",
-    output_key: str = "video_info",
-    ext: bool = False,
     disable_parallel: bool = False,
-    num_workers: Optional[int] = None
+    num_workers: int = 16,
+    seed: int = 42,
+    ext: bool = False
 ):
     ...
 ```
@@ -31,11 +29,10 @@ def __init__(
 | 参数名               | 类型                | 默认值            | 说明                                    |
 | :---------------- | :---------------- | :------------- | :------------------------------------ |
 | `backend`         | `str`             | `"opencv"`     | 后端选择：`"opencv"`、`"torchvision"` 或 `"av"`      |
-| `input_video_key` | `str`             | `"video"`      | 输入数据中视频路径字段名                            |
-| `output_key`      | `str`             | `"video_info"` | 输出视频信息字段名                              |
-| `ext`             | `bool`            | `False`        | 是否过滤掉不存在的视频文件路径                          |
 | `disable_parallel` | `bool`            | `False`        | 是否禁用并行处理                                |
-| `num_workers`     | `Optional[int]`   | `None`         | 并行处理的 worker 数量，默认为 CPU 核心数              |
+| `num_workers`     | `int`   | `16`         | 并行处理的 worker 数量              |
+| `seed`            | `int`             | `42`           | 随机种子                                  |
+| `ext`             | `bool`            | `False`        | 是否过滤掉不存在的视频文件路径                          |
 
 ---
 
@@ -45,8 +42,8 @@ def __init__(
 def run(
     self,
     storage: DataFlowStorage,
-    input_video_key: Optional[str] = None,
-    output_key: Optional[str] = None
+    input_video_key: str = "video",
+    output_key: str = "video_info"
 ):
     ...
 ```
@@ -58,8 +55,8 @@ def run(
 | 参数名               | 类型                | 默认值    | 说明                                    |
 | :---------------- | :---------------- | :----- | :------------------------------------ |
 | `storage`         | `DataFlowStorage` | -      | Dataflow 数据存储对象                          |
-| `input_video_key` | `Optional[str]`   | `None` | 视频路径字段名（覆盖初始化参数）                        |
-| `output_key`      | `Optional[str]`   | `None` | 输出字段名（覆盖初始化参数）                           |
+| `input_video_key` | `str`   | `"video"` | 输入数据中视频路径字段名                        |
+| `output_key`      | `str`   | `"video_info"` | 输出视频信息字段名                           |
 
 ---
 
@@ -80,16 +77,17 @@ storage = FileStorage(
 # Step 2: 初始化算子
 filter_op = VideoInfoFilter(
     backend="opencv",
-    input_video_key="video",
-    output_key="video_info",
-    ext=False,
     disable_parallel=False,
-    num_workers=None
+    num_workers=16,
+    seed=42,
+    ext=False
 )
 
 # Step 3: 执行信息提取
 filter_op.run(
-    storage=storage.step()
+    storage=storage.step(),
+    input_video_key="video",
+    output_key="video_info"
 )
 ```
 

@@ -1,13 +1,12 @@
 ---
-title: Video Caption Generation
+title: Video Caption Generation (VideoToCaptionGenerator)
 createTime: 2025/07/16 14:50:59
-icon: material-symbols-light:interpreter-mode
 permalink: /en/mm_operators/video_understanding/generate/video_caption/
 ---
 
 ## 📘 Overview
 
-`VideoToCaptionGenerator` is an operator for **automatically generating video captions using Vision-Language Models (VLM)**.  
+`VideoToCaptionGenerator` is an operator for **automatically generating video captions using Vision-Language Models (VLM)** .  
 It analyzes input videos and generates high-quality descriptive text through prompt-based guidance, suitable for video annotation, multimodal dataset construction, and video understanding tasks.
 
 ---
@@ -40,7 +39,6 @@ def run(
     storage: DataFlowStorage,
     input_image_key: str = "image",
     input_video_key: str = "video",
-    input_audio_key: str = "audio",
     input_conversation_key: str = "conversation",
     output_key: str = "caption"
 ):
@@ -57,7 +55,6 @@ Read video paths → Build prompts → Call VLM model → Generate text descript
 | `storage`                | `DataFlowStorage` | -                | DataFlow storage object           |
 | `input_image_key`        | `str`             | `"image"`        | Field name for images in input    |
 | `input_video_key`        | `str`             | `"video"`        | Field name for videos in input    |
-| `input_audio_key`        | `str`             | `"audio"`        | Field name for audio in input     |
 | `input_conversation_key` | `str`             | `"conversation"` | Field name for conversations      |
 | `output_key`             | `str`             | `"caption"`      | Field name for model output       |
 
@@ -165,14 +162,6 @@ video_caption_generator = VideoToCaptionGenerator(
 
 ---
 
-## 📝 Notes
-
-1. ✅ Input data must contain a `conversation` field formatted as a list of messages
-2. ✅ Video file paths must be accessible local paths or URLs
-3. ✅ VLM model must support video input (e.g., Qwen2.5-VL series)
-4. ✅ Adjust `vllm_gpu_memory_utilization` and `vllm_tensor_parallel_size` based on GPU memory
-
----
 
 ## 🔗 Related Links
 

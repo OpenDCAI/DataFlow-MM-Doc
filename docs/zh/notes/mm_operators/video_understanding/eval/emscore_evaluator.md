@@ -1,7 +1,6 @@
 ---
 title: EMScore评估器（EMScoreEval）
 createTime: 2025/01/20 11:00:00
-icon: material-symbols-light:analytics
 permalink: /zh/mm_operators/video_understanding/eval/emscore_evaluator/
 ---
 
