@@ -33,6 +33,10 @@ export const MMGuide: ThemeNote = defineNoteConfig({
             items: [
                 'install_video_understanding',
                 'video_caption',
+                'video_clip_and_filter',
+                'video_qa',
+                'video_cotqa',
+                'video_longvideo_cotqa_api'
             ],
         },
         {
