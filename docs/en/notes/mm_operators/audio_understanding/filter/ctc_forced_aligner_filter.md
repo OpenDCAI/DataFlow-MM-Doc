@@ -1,11 +1,11 @@
 ---
-title: ctc_forced_aligner_filter
+title: CTCForcedAlignmentFilter
 createTime: 2025/10/14 18:51:16
 permalink: /en/mm_operators/hf4u4lhf/
 ---
 
 ## 📘-概述
-```CTCForcedAlignFilter``` is a filtering operator that filters data based on CTC forced-alignment scores from speech recognition results.
+```CTCForcedAlignmentFilter``` is a filtering operator that filters data based on CTC forced-alignment scores from speech recognition results.
 
 ## ```__init__```
 ```python
@@ -13,24 +13,7 @@ def __init__(
     self,
     model_path: str = "MahmoudAshraf/mms-300m-1130-forced-aligner",
     device: Union[str, List[str]] = "cuda",
-    num_workers: int = 1
-)
-```
-
-## `init` Parameters
-| Parameter | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `model_path` | `str` | `MahmoudAshraf/mms-300m-1130-forced-aligner` | The model identifier or path for the forced aligner used during evaluation. |
-| `device` | `Union[str, List[str]]` | `cuda` | The device on which the model runs. Options: `cuda` or `cpu`. You can also specify a list of devices, such as `["cuda:0", "cuda:1"]`, to initialize multiple models on multiple GPUs. |
-| `num_workers` | `int` | `1` | Degree of operator parallelism. Initializes `num_workers` model instances and assigns them to the devices specified by device. If num_workers exceeds the number of devices, multiple models will be initialized per device for concurrent execution. For example, with `device=["cuda:0", "cuda:1"]` and `num_workers=4`, two models will run on `cuda:0` and two on `cuda:1`. |
-
-## `run`
-```python
-def run(
-    self,
-    storage: DataFlowStorage,
-    input_audio_key: str = "audio",
-    input_conversation_key: str = "conversation",
+    num_workers: int = 1,
     sampling_rate: int = 16000,
     language: str = "en",
     micro_batch_size: int = 16,
@@ -42,12 +25,12 @@ def run(
 )
 ```
 
-Parameters
+## `init` Parameters
 | Parameter | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `storage` | `DataFlowStorage` | **Required** | The data storage instance used to hold input and output data. |
-| `input_audio_key` | `str` |` audio` | The key name for audio data in the input data, default is `audio`. |
-| `input_conversation_key` | `str` | `conversation` | The key name for conversation data in the input data, default is `conversation`. |
+| `model_path` | `str` | `MahmoudAshraf/mms-300m-1130-forced-aligner` | The model identifier or path for the forced aligner used during evaluation. |
+| `device` | `Union[str, List[str]]` | `cuda` | The device on which the model runs. Options: `cuda` or `cpu`. You can also specify a list of devices, such as `["cuda:0", "cuda:1"]`, to initialize multiple models on multiple GPUs. |
+| `num_workers` | `int` | `1` | Degree of operator parallelism. Initializes `num_workers` model instances and assigns them to the devices specified by device. If num_workers exceeds the number of devices, multiple models will be initialized per device for concurrent execution. For example, with `device=["cuda:0", "cuda:1"]` and `num_workers=4`, two models will run on `cuda:0` and two on `cuda:1`. |
 | `sampling_rate` | `int` | `16000` | Audio sampling rate, default `16000`. |
 | `language` | `str` | `en` | 	Audio language, default `en`. |
 | `micro_batch_size` | `int` | `16` | For long audio, the model splits it into multiple chunks. `micro_batch_size` specifies the chunk batch size per inference, default `16`. |
@@ -57,11 +40,28 @@ Parameters
 | `threshold` | `float` | `0.8` | Alignment score threshold, default `0.8`. |
 | `threshold_mode` | `str` | `min` | How to apply the threshold: `min` (filter by the minimum alignment score within a span window) or `mean` (filter by the average alignment score within a span window). Samples with scores ≥ `threshold` are kept. Default is `min`. |
 
+## `run`
+```python
+def run(
+    self,
+    storage: DataFlowStorage,
+    input_audio_key: str = "audio",
+    input_conversation_key: str = "conversation",
+)
+```
+
+Parameters
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `storage` | `DataFlowStorage` | **Required** | The data storage instance used to hold input and output data. |
+| `input_audio_key` | `str` |` audio` | The key name for audio data in the input data, default is `audio`. |
+| `input_conversation_key` | `str` | `conversation` | The key name for conversation data in the input data, default is `conversation`. |
+
 ## 🧠 Example Usage
 
 ```python
 from dataflow.utils.storage import FileStorage
-from dataflow.operators.core_audio import CTCForcedAlignFilter
+from dataflow.operators.core_audio import CTCForcedAlignmentFilter
 from dataflow.wrapper import BatchWrapper
 
 class testCTCForcedAlignFilter:
@@ -77,6 +77,12 @@ class testCTCForcedAlignFilter:
             model_path="/path/to/your/mms-300m-1130-forced-aligner",
             device=["cuda:0", "cuda:1", "cuda:2", "cuda:3", "cuda:4", "cuda:5", "cuda:6", "cuda:7"],
             num_workers=16,
+            language="en",  
+            micro_batch_size=16,
+            chinese_to_pinyin=False,
+            retain_word_level_alignment=True,
+            threshold=0.000,
+            threshold_mode="min"
         )
     
     def forward(self):
@@ -84,12 +90,6 @@ class testCTCForcedAlignFilter:
             storage=self.storage.step(),
             input_audio_key='audio',
             input_conversation_key='conversation',
-            language="en",  
-            micro_batch_size=16,
-            chinese_to_pinyin=False,
-            retain_word_level_alignment=True,
-            threshold=0.000,
-            threshold_mode="min"    
         )
         self.filter.close()
 
