@@ -1,12 +1,12 @@
 ---
-title: CTCForcedAlignSampleEvaluator
+title: CTCForcedAlignmentSampleEvaluator
 createTime: 2025/10/14 18:41:28
 permalink: /en/mm_operators/2ag2dfa2/
 ---
 
 
 ## 📘-概述
-```CTCForcedAlignSampleEvaluator``` is an evaluation operator used to assess speech recognition results based on CTC forced alignment.
+```CTCForcedAlignmentSampleEvaluator``` is an evaluation operator used to assess speech recognition results based on CTC forced alignment.
 
 ## ```__init__```
 ```python
@@ -15,6 +15,12 @@ def __init__(
     model_path: str = "MahmoudAshraf/mms-300m-1130-forced-aligner",
     device: Union[str, List[str]] = "cuda", 
     num_workers: int = 1,
+    sampling_rate: int = 16000,
+    language: str = "en",
+    micro_batch_size: int = 16,
+    chinese_to_pinyin: bool = False,
+    retain_word_level_alignment: bool = False,
+    romanize=True,
 )
 ```
 
@@ -24,6 +30,12 @@ def __init__(
 | `model_path` | `str` | `MahmoudAshraf/mms-300m-1130-forced-aligner` | The path to the pre-trained CTC forced aligner model. |
 | `device` | `Union[str, List[str]]` | `cuda` | The device on which the model runs. Options: "cuda" or "cpu", or a list such as `["cuda:0", "cuda:1"]` to initialize multiple models on multiple GPUs for parallel execution. |
 | `num_workers` | `int` | `1` | Degree of operator parallelism. Initializes `num_workers` models and assigns them to the devices specified by device. If `num_workers` exceeds the number of devices, multiple models will be initialized per device for concurrent execution. For example, with `device=["cuda:0", "cuda:1"]` and `num_workers=4`, two models will be initialized on `cuda:0` and two on `cuda:1`. |
+| `sampling_rate` | `int` | `16000` | Audio sampling rate, default `16000`. |
+| `language` | `str` | `en`| Audio language, default is `en`. |
+| `micro_batch_size` | `int` | `16` | When the audio is too long, the model will split the audio data into multiple segments, and `micro_batch_size` represents the batch size for each inference, default is 16. |
+| `chinese_to_pinyin` | `bool` | `False` | Whether to convert Chinese characters to Pinyin, default `False`. |
+| `retain_word_level_alignment` | `bool` | `False` | Whether to retain word-level alignment results, default `False`. |
+| `romanize` | `bool` | `True` | Whether to romanize characters, default `True`. |
 
 ## `run`
 ```python
@@ -33,12 +45,6 @@ def run(
     input_audio_key: str = "audio",
     input_conversation_key: str = "conversation",
     output_answer_key='forced_alignment_results',
-    sampling_rate: int = 16000,
-    language: str = "en",
-    micro_batch_size: int = 16,
-    chinese_to_pinyin: bool = False,
-    retain_word_level_alignment: bool = False,
-    romanize=True,
 )
 ```
 Executes the main logic of the operator: performs forced alignment on the input audio and conversation text and returns the alignment results.
@@ -50,17 +56,11 @@ Parameters
 | `input_audio_key` | `str` | `audio` | The key name for audio data in the input data, default is `audio`. |
 | `input_conversation_key` | `str` | `conversation` | The key name of the conversation data in the input, default is `conversation`. |
 | `output_answer_key` | `str` | `forced_alignment_results` | The key name for the alignment results in the output data, default is `forced_alignment_results`. |
-| `sampling_rate` | `int` | `16000` | Audio sampling rate, default `16000`. |
-| `language` | `str` | `en`| Audio language, default is `en`. |
-| `micro_batch_size` | `int` | `16` | When the audio is too long, the model will split the audio data into multiple segments, and `micro_batch_size` represents the batch size for each inference, default is 16. |
-| `chinese_to_pinyin` | `bool` | `False` | Whether to convert Chinese characters to Pinyin, default `False`. |
-| `retain_word_level_alignment` | `bool` | `False` | Whether to retain word-level alignment results, default `False`. |
-| `romanize` | `bool` | `True` | Whether to romanize characters, default `True`. |
 
 ## 🧠 Example Usage
 
 ```python
-from dataflow.operators.core_audio import CTCForcedAlignSampleEvaluator
+from dataflow.operators.core_audio import CTCForcedAlignmentSampleEvaluator
 from dataflow.operators.conversations import Conversation2Message
 from dataflow.serving import LocalModelVLMServing_vllm
 from dataflow.utils.storage import FileStorage
@@ -74,9 +74,13 @@ class ForcedAlignEval():
             cache_type="jsonl",
         )
 
-        self.aligner = CTCForcedAlignSampleEvaluator(
+        self.aligner = CTCForcedAlignmentSampleEvaluator(
             model_path="/path/to/your/mms-300m-1130-forced-aligner",
-            device="cpu"
+            device="cpu",
+            language="en",      
+            micro_batch_size=16,
+            chinese_to_pinyin=False,
+            retain_word_level_alignment=True,
         )
     
     def forward(self):
@@ -85,10 +89,6 @@ class ForcedAlignEval():
             input_audio_key='audio',
             input_conversation_key='conversation',
             output_answer_key="forced_alignment_results",
-            language="en",      
-            micro_batch_size=16,
-            chinese_to_pinyin=False,
-            retain_word_level_alignment=True,
         )
 
 if __name__ == "__main__":

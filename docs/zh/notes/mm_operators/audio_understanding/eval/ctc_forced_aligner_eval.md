@@ -1,12 +1,12 @@
 ---
-title: CTCForcedAlignSampleEvaluator
+title: CTCForcedAlignmentSampleEvaluator
 createTime: 2025/10/14 17:01:41
 # icon: material-symbols:add-notes-outline
 permalink: /zh/mm_operators/ggd0pjat/
 ---
 
 ## 📘-概述
-```CTCForcedAlignSampleEvaluator``` 是一个评估算子，用于评估基于 CTC 强制对齐的语音识别结果。
+```CTCForcedAlignmentSampleEvaluator``` 是一个评估算子，用于评估基于 CTC 强制对齐的语音识别结果。
 
 ## ```__init__```函数
 ```python
@@ -15,6 +15,12 @@ def __init__(
     model_path: str = "MahmoudAshraf/mms-300m-1130-forced-aligner",
     device: Union[str, List[str]] = "cuda", 
     num_workers: int = 1,
+    sampling_rate: int = 16000,
+    language: str = "en",
+    micro_batch_size: int = 16,
+    chinese_to_pinyin: bool = False,
+    retain_word_level_alignment: bool = False,
+    romanize=True,
 )
 ```
 
@@ -24,6 +30,12 @@ def __init__(
 | `model_path` | `str` | `MahmoudAshraf/mms-300m-1130-forced-aligner` | 执行生成所用的音频多模态大模型服务实例。 |
 | `device` | `Union[str, List[str]]` | `cuda` | 模型运行的设备，可选值为 `cuda` 或 `cpu`，也可以选择传入列表，如`["cuda:0", "cuda:1"]`，表示在多个GPU上初始化多个模型并行运行。 |
 | `num_workers` | `int` | `1` | 算子并行数，初始化num_workers个模型，依次分配在device参数指定的设备上。当`num_workers`初始化数量大于设备数量时，会自动在每个设备上初始化多个模型并发运行。如：指定设备为`["cuda:0", "cuda:1"]`，`num_workers`为`4`，则会在`cuda:0`上初始化两个模型，在`cuda:1`上初始化两个模型。 |
+| `sampling_rate` | `int` | `16000` | 音频采样率，默认值为 `16000`。 |
+| `language` | `str` | `en` | 音频语言，默认值为 `en`。 |
+| `micro_batch_size` | `int` | `16` | 当音频过长时，模型会将音频数据拆分成多个片段，`micro_batch_size`表示一次推理的为片段批次大小，默认值为 16。 |
+| `chinese_to_pinyin` | `bool` | `False` | 是否将中文字符转换为拼音，默认值为 `False`。 |
+| `retain_word_level_alignment` | `bool` | `False` | 是否保留单词级别的对齐结果，默认值为 `False`。 |
+| `romanize` | `bool` | `True` | 是否对字符进行罗马化处理，默认值为 `True`。 |
 
 ## `run`函数
 ```python
@@ -33,12 +45,6 @@ def run(
     input_audio_key: str = "audio",
     input_conversation_key: str = "conversation",
     output_answer_key='forced_alignment_results',
-    sampling_rate: int = 16000,
-    language: str = "en",
-    micro_batch_size: int = 16,
-    chinese_to_pinyin: bool = False,
-    retain_word_level_alignment: bool = False,
-    romanize=True,
 )
 ```
 执行算子主逻辑，对输入的音频和对话进行强制对齐，返回对齐结果。
@@ -50,17 +56,11 @@ def run(
 | `input_audio_key` | `str` | `audio` | 输入数据中音频数据的键名，默认值为 `audio`。 |
 | `input_conversation_key` | `str` | `conversation` | 输入数据中对话数据的键名，默认值为 `conversation`。 |
 | `output_answer_key` | `str` | `forced_alignment_results` | 输出数据中对齐结果的键名，默认值为 `forced_alignment_results`。 |
-| `sampling_rate` | `int` | `16000` | 音频采样率，默认值为 `16000`。 |
-| `language` | `str` | `en` | 音频语言，默认值为 `en`。 |
-| `micro_batch_size` | `int` | `16` | 当音频过长时，模型会将音频数据拆分成多个片段，`micro_batch_size`表示一次推理的为片段批次大小，默认值为 16。 |
-| `chinese_to_pinyin` | `bool` | `False` | 是否将中文字符转换为拼音，默认值为 `False`。 |
-| `retain_word_level_alignment` | `bool` | `False` | 是否保留单词级别的对齐结果，默认值为 `False`。 |
-| `romanize` | `bool` | `True` | 是否对字符进行罗马化处理，默认值为 `True`。 |
 
 ## 🧠 示例用法
 
 ```python
-from dataflow.operators.core_audio import CTCForcedAlignSampleEvaluator
+from dataflow.operators.core_audio import CTCForcedAlignmentSampleEvaluator
 from dataflow.operators.conversations import Conversation2Message
 from dataflow.serving import LocalModelVLMServing_vllm
 from dataflow.utils.storage import FileStorage
@@ -74,9 +74,13 @@ class ForcedAlignEval():
             cache_type="jsonl",
         )
 
-        self.aligner = CTCForcedAlignSampleEvaluator(
+        self.aligner = CTCForcedAlignmentSampleEvaluator(
             model_path="/path/to/your/mms-300m-1130-forced-aligner",
-            device="cpu"
+            device="cpu",
+            language="en",      
+            micro_batch_size=16,
+            chinese_to_pinyin=False,
+            retain_word_level_alignment=True,
         )
     
     def forward(self):
@@ -85,10 +89,6 @@ class ForcedAlignEval():
             input_audio_key='audio',
             input_conversation_key='conversation',
             output_answer_key="forced_alignment_results",
-            language="en",      
-            micro_batch_size=16,
-            chinese_to_pinyin=False,
-            retain_word_level_alignment=True,
         )
 
 if __name__ == "__main__":
