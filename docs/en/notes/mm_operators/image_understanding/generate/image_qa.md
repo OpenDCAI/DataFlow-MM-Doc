@@ -1,7 +1,7 @@
 ---
-title: Image Question-Answer Generation
+title: ImageQAGenerator
 createTime: 2025/10/15 16:00:00
-icon: material-symbols-light:quiz
+# icon: material-symbols-light:quiz
 permalink: /en/mm_operators/generate/image_qa/
 ---
 

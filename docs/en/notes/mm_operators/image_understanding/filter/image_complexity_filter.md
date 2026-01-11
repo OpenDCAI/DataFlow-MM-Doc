@@ -1,7 +1,7 @@
 ---
-title: Capability Complexity Filtering (ComplexityFilter)
+title: ComplexityFilter
 createTime: 2025/10/15 16:10:28
-icon: material-symbols-light:image
+# icon: material-symbols-light:image
 permalink: /en/mm_operators/filter/complexity_filter/
 ---
 ## 📘 Overview

@@ -1,7 +1,7 @@
 ---
-title: 图像美学过滤（ImageAsetheticFilter）
+title: ImageAestheticFilter
 createTime: 2025/10/15 15:45:04
-icon: material-symbols-light:image
+# icon: material-symbols-light:image
 permalink: /zh/mm_operators/filter/image_aesthetic_filter/
 ---
 ## 📘 概述

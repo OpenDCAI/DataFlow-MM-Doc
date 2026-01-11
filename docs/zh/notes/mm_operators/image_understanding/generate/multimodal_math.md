@@ -1,7 +1,7 @@
 ---
-title: 多模态数学题目生成
+title: MultimodalMathGenerator
 createTime: 2025/10/15 19:00:00
-icon: material-symbols-light:functions
+# icon: material-symbols-light:functions
 permalink: /zh/mm_operators/generate/multimodal_math/
 ---
 

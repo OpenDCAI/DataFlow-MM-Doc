@@ -1,7 +1,7 @@
 ---
-title: Multimodal Math Question Generation
+title: MultimodalMathGenerator
 createTime: 2025/10/15 19:00:00
-icon: material-symbols-light:functions
+# icon: material-symbols-light:functions
 permalink: /en/mm_operators/generate/multimodal_math/
 ---
 

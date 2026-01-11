@@ -1,8 +1,8 @@
 ---
 
-title: WikiQA Text Parsing and Normalization Operator
+title: WikiQARefiner
 createTime: 2025/10/15 19:00:00
-icon: material-symbols-light:article
+# icon: material-symbols-light:article
 permalink: /en/text_operators/refine/wikiqa/
 --------------------------------------------
 

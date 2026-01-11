@@ -1,7 +1,7 @@
 ---
-title: image_clip_evaluator
+title: ImageCLIPEvaluator
 createTime: 2025/10/15 19:56:33
-icon: material-symbols-light:image
+# icon: material-symbols-light:image
 permalink: /en/mm_operators/eval/image_clip_evaluator/
 ---
 ## 📘 Overview

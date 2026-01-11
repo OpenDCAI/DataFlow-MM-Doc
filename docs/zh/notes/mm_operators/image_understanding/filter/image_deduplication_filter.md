@@ -1,7 +1,7 @@
 ---
-title: 图片相似度过滤（DuplicateFilter）
+title: ImageDeduplicateFilter
 createTime: 2025/10/15 19:24:01
-icon: material-symbols-light:image
+# icon: material-symbols-light:image
 permalink: /zh/mm_operators/filter/image_deduplicate_filter/
 ---
 ## 📘 概述

@@ -1,7 +1,7 @@
 ---
-title: Consistency Filtering (ImageConsistencyFilter)
+title: ImageConsistencyFilter
 createTime: 2025/10/15 15:48:32
-icon: material-symbols-light:image
+# icon: material-symbols-light:image
 permalink: /en/mm_operators/filter/image_consistency_filter/
 ---
 ## 📘 Overview

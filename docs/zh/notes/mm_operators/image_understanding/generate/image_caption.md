@@ -1,7 +1,7 @@
 ---
-title: 图片字幕生成
+title: ImageCaptionGenerator
 createTime: 2025/10/15 15:00:00
-icon: material-symbols-light:image
+# icon: material-symbols-light:image
 permalink: /zh/mm_operators/generate/image_caption/
 ---
 

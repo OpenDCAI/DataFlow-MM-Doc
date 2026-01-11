@@ -1,7 +1,7 @@
 ---
-title: 图文多样性过滤（TextImageDiversityFilter）
+title: ImageDiversityFilter
 createTime: 2025/10/15 19:34:47
-icon: material-symbols-light:image
+# icon: material-symbols-light:image
 permalink: /zh/mm_operators/filter/image_diversity_filter/
 ---
 ## 📘 概述

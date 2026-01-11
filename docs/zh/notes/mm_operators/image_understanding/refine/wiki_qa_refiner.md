@@ -1,8 +1,8 @@
 ---
 
-title: WikiQA 文本解析与规范化算子
+title: WikiQARefiner
 createTime: 2025/10/15 19:00:00
-icon: material-symbols-light:article
+# icon: material-symbols-light:article
 permalink: /zh/text_operators/refine/wikiqa/
 --------------------------------------------
 

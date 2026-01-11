@@ -1,7 +1,7 @@
 ---
-title: image_deduplication_filter
+title: ImageDeduplicateFilter
 createTime: 2025/10/15 19:56:47
-icon: material-symbols-light:image
+# icon: material-symbols-light:image
 permalink: /en/mm_operators/filter/image_deduplication_filter/
 ---
 ## 📘 Overview

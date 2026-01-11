@@ -1,7 +1,7 @@
 ---
-title: Personalized Image QA Generation
+title: PersQAGenerator
 createTime: 2025/10/15 18:20:00
-icon: material-symbols-light:quiz
+# icon: material-symbols-light:quiz
 permalink: /en/mm_operators/generate/image_pers_qa/
 ---
 

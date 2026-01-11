@@ -1,7 +1,7 @@
 ---
-title: image_diversity_filter
+title: ImageDiversityFilter
 createTime: 2025/10/15 19:57:00
-icon: material-symbols-light:image
+# icon: material-symbols-light:image
 permalink: /en/mm_operators/filter/image_diversity_filter/
 ---
 ## 📘 Overview

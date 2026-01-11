@@ -1,7 +1,7 @@
 ---
-title: Text Naturalness Filtering (ImageCatFilter)
+title: ImageCatFilter
 createTime: 2025/10/15 15:00:00
-icon: material-symbols-light:image
+# icon: material-symbols-light:image
 permalink: /en/mm_operators/filter/image_cat_filter/
 ---
 ## 📘 Overview

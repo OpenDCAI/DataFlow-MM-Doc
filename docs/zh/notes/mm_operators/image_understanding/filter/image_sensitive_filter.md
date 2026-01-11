@@ -1,7 +1,7 @@
 ---
-title: 敏感内容过滤（SensitiveFilter）
+title: ImageSensitiveFilter
 createTime: 2025/10/15 15:31:35
-icon: material-symbols-light:image
+# icon: material-symbols-light:image
 permalink: /zh/mm_operators/filter/image_sensitive_filter/
 ---
 ## 📘 概述

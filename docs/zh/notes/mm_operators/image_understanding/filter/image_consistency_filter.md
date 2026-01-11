@@ -1,7 +1,7 @@
 ---
-title: 相似度过滤（ClipFilter）
+title: ImageConsistencyFilter
 createTime: 2025/10/15 15:48:32
-icon: material-symbols-light:image
+# icon: material-symbols-light:image
 permalink: /zh/mm_operators/filter/image_consistency_filter/
 ---
 ## 📘 概述

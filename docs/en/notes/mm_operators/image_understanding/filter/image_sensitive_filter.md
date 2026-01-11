@@ -1,7 +1,7 @@
 ---
-title: image_sensitive_filter
+title: ImageSensitiveFilter
 createTime: 2025/10/15 15:31:35
-icon: material-symbols-light:image
+# icon: material-symbols-light:image
 permalink: /en/mm_operators/filter/image_sensitive_filter/
 ---
 ## 📘 Overview

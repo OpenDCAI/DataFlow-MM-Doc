@@ -1,7 +1,7 @@
 ---
-title: Image Caption Generation
+title: ImageCaptionGenerator
 createTime: 2025/10/15 15:00:00
-icon: material-symbols-light:image
+# icon: material-symbols-light:image
 permalink: /en/mm_operators/generate/image_caption/
 ---
 

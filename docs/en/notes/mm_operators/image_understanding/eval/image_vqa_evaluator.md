@@ -1,7 +1,7 @@
 ---
-title: BLIP-based VQA Alignment Evaluation
+title: ImageVQAScoreEvaluator
 createTime: 2025/10/15 14:52:29
-icon: material-symbols-light:image
+# icon: material-symbols-light:image
 permalink: /en/mm_operators/eval/image_vqa_evaluator/
 ---
 ## 📘 Overview

@@ -1,7 +1,7 @@
 ---
-title: Clip分数评估
+title: ImageCLIPEvaluator
 createTime: 2025/10/15 13:47:08
-icon: material-symbols-light:image
+# icon: material-symbols-light:image
 permalink: /zh/mm_operators/eval/image_clip_evaluator/
 ---
 ## 📘 概述

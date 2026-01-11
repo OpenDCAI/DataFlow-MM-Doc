@@ -1,7 +1,7 @@
 ---
-title: LongClip分数评估
+title: ImageLongCLIPEvaluator
 createTime: 2025/10/15 14:30:52
-icon: material-symbols-light:image
+# icon: material-symbols-light:image
 permalink: /zh/mm_operators/eval/image_longclip_evaluator/
 ---
 ## 📘 概述
