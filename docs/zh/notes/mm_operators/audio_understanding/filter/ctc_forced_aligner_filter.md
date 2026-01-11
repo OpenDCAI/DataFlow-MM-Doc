@@ -1,12 +1,12 @@
 ---
-title: CTCForcedAlignFilter
+title: CTCForcedAlignmentFilter
 createTime: 2025/10/14 17:08:32
 # icon: material-symbols:filter-alt
 permalink: /zh/mm_operators/i5gi7q3f/
 ---
 
 ## 📘-概述
-```CTCForcedAlignFilter``` 是一个过滤算子，用于基于 CTC 强制对齐的语音识别结果过滤数据。
+```CTCForcedAlignmentFilter``` 是一个过滤算子，用于基于 CTC 强制对齐的语音识别结果过滤数据。
 
 ## ```__init__```函数
 ```python
@@ -14,24 +14,7 @@ def __init__(
     self,
     model_path: str = "MahmoudAshraf/mms-300m-1130-forced-aligner",
     device: Union[str, List[str]] = "cuda",
-    num_workers: int = 1
-)
-```
-
-## `init`参数说明
-| 参数名 | 类型 | 默认值 | 说明 |
-| :--- | :--- | :--- | :--- |
-| `model_path` | `str` | `MahmoudAshraf/mms-300m-1130-forced-aligner` | 执行生成所用的音频多模态大模型服务实例。 |
-| `device` | `Union[str, List[str]]` | `cuda` | 模型运行的设备，可选值为 `cuda` 或 `cpu`，也可以选择传入列表，如["cuda:0", "cuda:1"]，表示在多个GPU上初始化多个模型并行运行。 |
-| `num_workers` | `int` | `1` | 算子并行数，初始化`num_workers`个模型，依次分配在device参数指定的设备上。当`num_workers`初始化数量大于设备数量时，会自动在每个设备上初始化多个模型并发运行。如：指定设备为`["cuda:0", "cuda:1"]`，`num_workers`为4，则会在`cuda:0`上初始化两个模型，在`cuda:1`上初始化两个模型。 |
-
-## `run`函数
-```python
-def run(
-    self,
-    storage: DataFlowStorage,
-    input_audio_key: str = "audio",
-    input_conversation_key: str = "conversation",
+    num_workers: int = 1,
     sampling_rate: int = 16000,
     language: str = "en",
     micro_batch_size: int = 16,
@@ -43,12 +26,12 @@ def run(
 )
 ```
 
-参数
+## `init`参数说明
 | 参数名 | 类型 | 默认值 | 说明 |
 | :--- | :--- | :--- | :--- |
-| `storage` | `DataFlowStorage` | **必填** | 数据存储实例，用于存储输入和输出数据。 |
-| `input_audio_key` | `str` |` audio` | 输入数据中音频数据的键名，默认值为 `audio`。 |
-| `input_conversation_key` | `str` | `conversation` | 输入数据中对话数据的键名，默认值为 `conversation`。 |
+| `model_path` | `str` | `MahmoudAshraf/mms-300m-1130-forced-aligner` | 执行生成所用的音频多模态大模型服务实例。 |
+| `device` | `Union[str, List[str]]` | `cuda` | 模型运行的设备，可选值为 `cuda` 或 `cpu`，也可以选择传入列表，如["cuda:0", "cuda:1"]，表示在多个GPU上初始化多个模型并行运行。 |
+| `num_workers` | `int` | `1` | 算子并行数，初始化`num_workers`个模型，依次分配在device参数指定的设备上。当`num_workers`初始化数量大于设备数量时，会自动在每个设备上初始化多个模型并发运行。如：指定设备为`["cuda:0", "cuda:1"]`，`num_workers`为4，则会在`cuda:0`上初始化两个模型，在`cuda:1`上初始化两个模型。 |
 | `sampling_rate` | `int` | `16000` | 音频采样率，默认值为 `16000`。 |
 | `language` | `str` | `en` | 音频语言，默认值为 `en`。 |
 | `micro_batch_size` | `int` | `16` | 当音频过长时，模型会将音频数据拆分成多个片段，`micro_batch_size`表示一次推理的为片段批次大小，默认值为 `16`。 |
@@ -58,11 +41,29 @@ def run(
 | `threshold` | `float` | `0.8` | 对齐分数阈值，默认值为 `0.8`。 |
 | `threshold_mode` | `str` | `min` | 对齐分数阈值模式，可选值为 `min` 或 ``mean`。保留高于阈值`threshold`的样本，默认值为 `min`，表示按照一段时间内的最小对齐分数进行过滤。 `mean`表示按照一段时间内的平均对齐分数进行过滤。 |
 
+
+## `run`函数
+```python
+def run(
+    self,
+    storage: DataFlowStorage,
+    input_audio_key: str = "audio",
+    input_conversation_key: str = "conversation",
+)
+```
+
+参数
+| 参数名 | 类型 | 默认值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `storage` | `DataFlowStorage` | **必填** | 数据存储实例，用于存储输入和输出数据。 |
+| `input_audio_key` | `str` |` audio` | 输入数据中音频数据的键名，默认值为 `audio`。 |
+| `input_conversation_key` | `str` | `conversation` | 输入数据中对话数据的键名，默认值为 `conversation`。 |
+
 ## 🧠 示例用法
 
 ```python
 from dataflow.utils.storage import FileStorage
-from dataflow.operators.core_audio import CTCForcedAlignFilter
+from dataflow.operators.core_audio import CTCForcedAlignmentFilter
 from dataflow.wrapper import BatchWrapper
 
 class testCTCForcedAlignFilter:
@@ -78,19 +79,19 @@ class testCTCForcedAlignFilter:
             model_path="/path/to/your/mms-300m-1130-forced-aligner",
             device=["cuda:0", "cuda:1", "cuda:2", "cuda:3", "cuda:4", "cuda:5", "cuda:6", "cuda:7"],
             num_workers=16,
+            language="en",  
+            micro_batch_size=16,
+            chinese_to_pinyin=False,
+            retain_word_level_alignment=True,
+            threshold=0.000,
+            threshold_mode="min"
         )
     
     def forward(self):
         self.filter.run(
             storage=self.storage.step(),
             input_audio_key='audio',
-            input_conversation_key='conversation',
-            language="en",  
-            micro_batch_size=16,
-            chinese_to_pinyin=False,
-            retain_word_level_alignment=True,
-            threshold=0.000,
-            threshold_mode="min"    
+            input_conversation_key='conversation',    
         )
         self.filter.close()
 

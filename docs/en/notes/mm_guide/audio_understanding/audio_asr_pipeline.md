@@ -33,7 +33,7 @@ from dataflow.prompts.whisper_prompt_generator import WhisperTranscriptionPrompt
 class Pipeline:
     def __init__(self):
         self.storage = FileStorage(
-            first_entry_file_name="./dataflow/example/audio_asr_pipeline/sample_data_local.jsonl",
+            first_entry_file_name="../example_data/audio_asr_pipeline/sample_data_local.jsonl",
             cache_path="./cache",
             file_name_prefix="audio_asr_pipeline",
             cache_type="jsonl",
@@ -43,44 +43,17 @@ class Pipeline:
             hf_model_name_or_path="openai/whisper-large-v3",
             hf_cache_dir="./dataflow_cache",
             vllm_tensor_parallel_size=2,
-            vllm_temperature=0.6,
+            vllm_temperature=0.3,
             vllm_top_p=0.9,
-            vllm_max_tokens=512,
             vllm_max_model_len=448,
             vllm_gpu_memory_utilization=0.9
         )
 
         self.silero_vad_generator = SileroVADGenerator(
-            repo_or_dir="snakers4/silero-vad",                      # Model loading path
-            source="github",                                        # Load weights from GitHub, or set "local" to load from local path
-            device=['cuda:2'],                                      # GPUs that the model can be loaded on 
-            num_workers=2,                                          # Process count; each process loads one model instance
-        )
-        
-        self.merger = MergeChunksRowGenerator(num_workers=2)
-
-        self.prompted_generator = PromptedAQAGenerator(
-            vlm_serving=self.serving,
-            system_prompt=WhisperTranscriptionPrompt().generate_prompt(language="german", task="transcribe", with_timestamps=False),
-        )
-
-        # self.filter = CTCForcedAlignFilter(
-        #     model_path="MahmoudAshraf/mms-300m-1130-forced-aligner",
-        #     device=["cuda:3"],
-        #     num_workers=1,
-        # )
-
-        self.evaluator = CTCForcedAlignmentSampleEvaluator(
-            model_path="MahmoudAshraf/mms-300m-1130-forced-aligner",
-            device=["cuda:3"],                                      # GPUs that the model can be loaded on
-            num_workers=2,                                          # Process count; each process loads one model instance
-        )
-
-    def forward(self):
-        self.silero_vad_generator.run(
-            storage=self.storage.step(),
-            input_audio_key='audio',
-            output_answer_key='timestamps',
+            repo_or_dir="snakers4/silero-vad",
+            source="github",
+            device=['cuda:2'],
+            num_workers=1,
             threshold=0.5,
             use_min_cut=True,
             sampling_rate=16000,
@@ -94,17 +67,60 @@ class Pipeline:
             use_max_poss_sil_at_max_speech=True
         )
 
+        self.merger = MergeChunksRowGenerator(
+            num_workers=1,
+            dst_folder="./cache",
+            timestamp_type="time",  
+            max_audio_duration=30.0,
+            hop_size_samples=512,
+            sampling_rate=16000,
+        )
+
+        self.prompted_generator = PromptedAQAGenerator(
+            vlm_serving=self.serving,
+            system_prompt=WhisperTranscriptionPrompt().generate_prompt(language="english", task="transcribe", with_timestamps=False)
+        )
+
+        # self.filter = CTCForcedAlignmentFilter(
+        #     model_path="MahmoudAshraf/mms-300m-1130-forced-aligner",
+        #     device=["cuda:3"],
+        #     num_workers=1,
+        #     sampling_rate=16000,
+        #     language="de",
+        #     micro_batch_size=16,
+        #     chinese_to_pinyin=False,
+        #     retain_word_level_alignment=True,
+        #     threshold=0.1,
+        #     threshold_mode="min",
+        #     romanize=True,
+        # )
+
+
+        self.evaluator = CTCForcedAlignmentSampleEvaluator(
+            model_path="MahmoudAshraf/mms-300m-1130-forced-aligner",
+            device=["cuda:3"],
+            num_workers=2,
+            sampling_rate=16000,
+            language="de",
+            micro_batch_size=16,
+            chinese_to_pinyin=False,
+            retain_word_level_alignment=True,
+            romanize=True,
+        )
+        
+    def forward(self):
+        self.silero_vad_generator.run(
+            storage=self.storage.step(),
+            input_audio_key='audio',
+            output_answer_key='timestamps',
+        )
+
         self.silero_vad_generator.close()     # Close multiprocessing
 
         self.merger.run(
             storage=self.storage.step(),
-            dst_folder="./cache",
             input_audio_key="audio",
             input_timestamps_key="timestamps",
-            timestamp_type="time", 
-            max_audio_duration=30.0,
-            hop_size_samples=512, 
-            sampling_rate=16000,
         )
 
         self.merger.close()
@@ -120,14 +136,6 @@ class Pipeline:
         #     storage=self.storage.step(),
         #     input_audio_key="audio",
         #     input_conversation_key="transcript",
-        #     sampling_rate=16000,
-        #     language="de",
-        #     micro_batch_size=16,
-        #     chinese_to_pinyin=False,
-        #     retain_word_level_alignment=True,
-        #     threshold=0.1,
-        #     threshold_mode="min",
-        #     romanize=True,
         # )
         # self.filter.close()
 
@@ -135,12 +143,7 @@ class Pipeline:
             storage=self.storage.step(),
             input_audio_key="audio",
             input_conversation_key="transcript",
-            sampling_rate=16000,
-            language="de",
-            micro_batch_size=16,
-            chinese_to_pinyin=False,
-            retain_word_level_alignment=True,
-            romanize=True,
+            output_answer_key="forced_alignment_results",
         )
 
         self.evaluator.close()

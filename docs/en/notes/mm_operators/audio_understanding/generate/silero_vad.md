@@ -16,27 +16,6 @@ def __init__(self,
     source: str = "github",
     device: Union[str, List[str]] = "cuda",
     num_workers: int = 1,
-)
-```
-
-
-## `init` Parameters
-| Parameter | Type | Default | Description |
-| --- | --- | --- | --- |
-| `repo_or_dir` | `str` | `snakers4/silero-vad` | The repository or local directory of the model. |
-| `source` | `str` | `github` | The source of the model, either `github` or `local`. |
-| `device` | `Union[str, List[str]]` | `cuda` | The device(s) to run the model on. Can be a single device string (e.g., "cuda" or "cpu") or a list of device strings (e.g., `["cuda:0", "cuda:1"]`). |
-| `num_workers` | `int` | `1` | The number of parallel workers (models) to initialize. These are distributed across the devices specified in the device parameter. If `num_workers` exceeds the number of available devices, multiple models will be initialized per device. For example, with `device=["cuda:0", "cuda:1"]` and `num_workers=4`, two models will run on `cuda:0` and two on `cuda:1`. |
-
-Note: The Silero VAD model loads weights from the GitHub repository, not from the Hugging Face hub.
-
-## `run`
-```python
-def run(
-    self,
-    storage: DataFlowStorage,
-    input_audio_key: str = "audio",
-    output_answer_key: str = "timestamps",
     threshold: float = 0.5,
     use_min_cut: bool = False,
     sampling_rate: int = 16000,
@@ -48,18 +27,18 @@ def run(
     time_resolution: int = 1,
     neg_threshold: float = None,
     min_silence_at_max_speech: float = 0.098,
-    use_max_poss_sil_at_max_speech: bool = True            
-    )
+    use_max_poss_sil_at_max_speech: bool = True 
+)
 ```
-Executes the main logic of the operator. It reads the input DataFrame from storage, calls the Silero VAD model to generate speech segment timestamps, and writes the results back to storage.
 
 
-Parameters
+## `init` Parameters
 | Parameter | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `storage` | `DataFlowStorage` | **Required** | The data storage instance used for reading input and writing output. |
-| `input_audio_key` | `str` | `audio` | The key name for the column containing paths to audio files. |
-| `output_answer_key` | `str` | `timestamps` | The key name for the column where the list of detected speech segment timestamps will be stored. |
+| --- | --- | --- | --- |
+| `repo_or_dir` | `str` | `snakers4/silero-vad` | The repository or local directory of the model. |
+| `source` | `str` | `github` | The source of the model, either `github` or `local`. |
+| `device` | `Union[str, List[str]]` | `cuda` | The device(s) to run the model on. Can be a single device string (e.g., "cuda" or "cpu") or a list of device strings (e.g., `["cuda:0", "cuda:1"]`). |
+| `num_workers` | `int` | `1` | The number of parallel workers (models) to initialize. These are distributed across the devices specified in the device parameter. If `num_workers` exceeds the number of available devices, multiple models will be initialized per device. For example, with `device=["cuda:0", "cuda:1"]` and `num_workers=4`, two models will run on `cuda:0` and two on `cuda:1`. |
 | `threshold` | `float` | `0.5` | The VAD threshold used to determine whether a segment is speech. |
 | `use_min_cut` | `bool` | `False` | Whether to use the min-cut algorithm to split overly long speech regions. It searches for the lowest VAD probability point in the latter half of a long segment to cut, avoiding hard cuts at the window boundary. |
 | `sampling_rate` | `int` | `16000` | The audio sampling rate, must be 16000. |
@@ -72,6 +51,27 @@ Parameters
 | `neg_threshold` | `Optional[float]` |` None` | Negative threshold for VAD. If `None`, set to `max(threshold - 0.15, 0.01)`. Lower values reduce jitter but increase sensitivity. |
 | `min_silence_at_max_speech` | `float`| `0.098` | Maximum silence duration allowed (in seconds) when a speech region exceeds `max_speech_duration_s`. The algorithm will attempt normal silent cuts first, then fall back to min-cut if needed. |
 | `use_max_poss_sil_at_max_speech` | `bool` | `True` | When the `max_speech_duration_s` limit is reached and multiple candidate silences exist, whether to select the longest one as the cut point. |
+
+Note: The Silero VAD model loads weights from the GitHub repository, not from the Hugging Face hub.
+
+## `run`
+```python
+def run(
+    self,
+    storage: DataFlowStorage,
+    input_audio_key: str = "audio",
+    output_answer_key: str = "timestamps",           
+    )
+```
+Executes the main logic of the operator. It reads the input DataFrame from storage, calls the Silero VAD model to generate speech segment timestamps, and writes the results back to storage.
+
+
+Parameters
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `storage` | `DataFlowStorage` | **Required** | The data storage instance used for reading input and writing output. |
+| `input_audio_key` | `str` | `audio` | The key name for the column containing paths to audio files. |
+| `output_answer_key` | `str` | `timestamps` | The key name for the column where the list of detected speech segment timestamps will be stored. |
 
 ## 🧠 Example Usage
 
@@ -93,13 +93,6 @@ class SileroVADGeneratorEval:
             source="local",
             device=['cuda:0'],
             num_workers=1,
-        )
-    
-    def forward(self):
-        self.silero_vad_generator.run(
-            storage=self.storage.step(),
-            input_audio_key='audio',
-            output_answer_key='timestamps',
             threshold=0.5,
             use_min_cut=False,
             sampling_rate=16000,
@@ -113,6 +106,13 @@ class SileroVADGeneratorEval:
             window_size_samples=512,
             min_silence_at_max_speech=98,
             use_max_poss_sil_at_max_speech=True,
+        )
+    
+    def forward(self):
+        self.silero_vad_generator.run(
+            storage=self.storage.step(),
+            input_audio_key='audio',
+            output_answer_key='timestamps',
         )
 
     
