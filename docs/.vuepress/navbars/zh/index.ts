@@ -59,6 +59,18 @@ export const zhNavbar = defineNavbarConfig([
                                 icon: 'material-symbols:auto-transmission-sharp',
                                 activeMatch: '^/guide/'
                             },
+                            {
+                                text:'视频清洗算子',
+                                link:'/zh/notes/mm_operators/video_filtering/video_filtering_operators.md',
+                                icon: 'material-symbols:video-camera-back',
+                                activeMatch:'^/guide/'
+                            },
+                            {
+                                text:'视频评估算子',
+                                link:'/zh/notes/mm_operators/video_eval/video_quality_evaluation_operators.md',
+                                icon: 'material-symbols:compare',
+                                activeMatch:'^/guide/'
+                            }
                 ]
             },
         ]

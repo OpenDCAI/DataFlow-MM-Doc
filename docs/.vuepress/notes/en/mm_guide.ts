@@ -44,6 +44,7 @@ export const MMGuide: ThemeNote = defineNoteConfig({
                 'install_audio_understanding',
                 'audio_caption',
                 'whisper_asr',
+                'audio_asr_pipeline'
             ],
         },
         {
