@@ -29,7 +29,6 @@ export const MMGuide: ThemeNote = defineNoteConfig({
                 'image_region_caption_pipeline',
                 'image_scale_caption_pipeline',
                 'image_visual_only_mcq_pipeline',
-                'multirole_videoqa_pipeline'
             ],
         },
         {
@@ -43,7 +42,8 @@ export const MMGuide: ThemeNote = defineNoteConfig({
                 'video_clip_and_filter',
                 'video_qa',
                 'video_cotqa',
-                'video_longvideo_cotqa_api'
+                'video_longvideo_cotqa_api',
+                'multirole_videoqa_pipeline'
             ],
         },
         {
