@@ -36,6 +36,13 @@ export const MMOperators: ThemeNote = defineNoteConfig({
                         'image_qa',
                         'image_pers_qa',
                         'multimodal_math',
+                        "prompt_templated_vqa_generator",
+                        "fix_prompted_vqa_generator",
+                        "prompted_vqa_generator",
+                        "batch_vqa_generator",
+                        "visual_reasoning_generator",
+                        "vlm_bbox_generator",
+                        "image_bbox_generator"
                         // 'vision_mct_reasoning',
                         // 'image_region_caption',
                         // 'image_scale_caption',
@@ -74,6 +81,8 @@ export const MMOperators: ThemeNote = defineNoteConfig({
                     collapsed: false,
                     prefix: 'refine/',
                     items: [
+                        'visual_dependency_refiner',
+                        'visual_grounding_refiner',
                         'wiki_qa_refiner',
                     ]
                 }
