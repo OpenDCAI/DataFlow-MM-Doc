@@ -7,7 +7,7 @@ permalink: /zh/mm_operators/generate/image_qa/
 
 ## 📘 概述
 
-`ImageQAGenerate` 是一个用于**根据图像内容自动生成问答对（Visual QA）**的算子。  
+`ImageQAGenerator` 是一个用于**根据图像内容自动生成问答对（Visual QA）**的算子。  
 它会基于图像场景智能提出合理问题，并生成参考答案。
 
 **功能特点：**
@@ -65,7 +65,7 @@ def run(
 ```python
 from dataflow.utils.storage import FileStorage
 from dataflow.serving.local_model_vlm_serving import LocalModelVLMServing_vllm
-from dataflow.operators.core_vision import ImageQAGenerate
+from dataflow.operators.core_vision import ImageQAGenerator
 
 # Step 1: 启动本地模型服务
 serving = LocalModelVLMServing_vllm(
@@ -86,7 +86,7 @@ storage = FileStorage(
 storage.step() # 加载数据
 
 # Step 3: 初始化并运行算子
-qa_generator = ImageQAGenerate(serving)
+qa_generator = ImageQAGenerator(serving)
 qa_generator.run(
     storage=storage,
     input_modal_key="image",

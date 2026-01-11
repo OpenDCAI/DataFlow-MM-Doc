@@ -7,7 +7,7 @@ permalink: /en/mm_operators/generate/multimodal_math/
 
 ## 📘 Overview
 
-`MultimodalMathGenerate` is a data generation operator for **automatically creating function plots (images) and corresponding math Question-Answer (QA) pairs**.  
+`MultimodalMathGenerator` is a data generation operator for **automatically creating function plots (images) and corresponding math Question-Answer (QA) pairs**.  
 It supports various function types (linear, quadratic, sine, exponential, etc.) and generates simple calculation problems or advanced conceptual problems based on the `mode` field (`simple` or `complex`) in the input data. This operator is suitable for educational applications, visual QA model training, and math reasoning evaluation.
 
 -----
@@ -69,7 +69,7 @@ The `run` function executes the main operator logic: it reads the data from `sto
 
 ```python
 from dataflow.utils.storage import FileStorage
-from dataflow.operators.core_math import MultimodalMathGenerate
+from dataflow.operators.core_math import MultimodalMathGenerator
 import pandas as pd
 
 # Step 1: Prepare an input file containing the 'mode' column (e.g., data/math_tasks.jsonl)
@@ -87,7 +87,7 @@ storage = FileStorage(
 storage.step() # Load data
 
 # Step 2: Initialize the operator
-math_generator = MultimodalMathGenerate(
+math_generator = MultimodalMathGenerator(
     image_dir="./math_plots",
     seed=42
 )

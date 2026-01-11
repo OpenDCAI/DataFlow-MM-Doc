@@ -7,7 +7,7 @@ permalink: /zh/mm_operators/generate/image_caption/
 
 ## 📘 概述
 
-`ImageCaptionGenerate` 是一个用于**调用视觉语言大模型（VLM）自动生成图片描述（Caption）**的算子。  
+`ImageCaptionGenerator` 是一个用于**调用视觉语言大模型（VLM）自动生成图片描述（Caption）**的算子。  
 它根据输入图像，自动构建提示词，引导模型输出高质量的场景或目标描述，适用于多模态标注、数据集构建、图文匹配等场景。
 
 **功能特点：**
@@ -65,7 +65,7 @@ def run(
 ```python
 from dataflow.utils.storage import FileStorage
 from dataflow.serving.local_model_vlm_serving import LocalModelVLMServing_vllm
-from dataflow.operators.core_vision import ImageCaptionGenerate
+from dataflow.operators.core_vision import ImageCaptionGenerator
 
 # Step 1: 启动本地模型服务
 serving = LocalModelVLMServing_vllm(
@@ -86,7 +86,7 @@ storage = FileStorage(
 storage.step() # 加载数据
 
 # Step 3: 初始化并运行算子
-generator = ImageCaptionGenerate(serving)
+generator = ImageCaptionGenerator(serving)
 generator.run(
     storage=storage,
     input_modal_key="image",

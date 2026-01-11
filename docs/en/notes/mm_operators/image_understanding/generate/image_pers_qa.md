@@ -7,7 +7,7 @@ permalink: /en/mm_operators/generate/image_pers_qa/
 
 ## 📘 Overview
 
-`PersQAGenerate` is an operator designed to **generate personalized image Question-Answer (QA) pairs based on large vision-language models (VLMs)**.  
+`PersQAGenerator` is an operator designed to **generate personalized image Question-Answer (QA) pairs based on large vision-language models (VLMs)**.  
 It performs the following steps:
 
   * Automatically assigns a name tag to the main character in the image (hardcoded as `<mam>` in the implementation).
@@ -73,7 +73,7 @@ The `run` function executes the main QA generation logic: read image paths → c
 ```python
 from dataflow.utils.storage import FileStorage
 from dataflow.serving.local_model_vlm_serving import LocalModelVLMServing_vllm
-from dataflow.operators.core_vision import PersQAGenerate
+from dataflow.operators.core_vision import PersQAGenerator
 
 # Step 1: Launch local model service
 serving = LocalModelVLMServing_vllm(
@@ -94,7 +94,7 @@ storage = FileStorage(
 storage.step()
 
 # Step 3: Initialize and run the operator
-generator = PersQAGenerate(serving)
+generator = PersQAGenerator(serving)
 generator.run(
     storage=storage,
     input_modal_key="image",

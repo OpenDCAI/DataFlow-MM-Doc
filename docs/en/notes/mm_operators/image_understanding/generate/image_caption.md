@@ -7,7 +7,7 @@ permalink: /en/mm_operators/generate/image_caption/
 
 ## 📘 Overview
 
-`ImageCaptionGenerate` is an operator designed to **automatically generate image captions using large vision-language models (VLMs)**.  
+`ImageCaptionGenerator` is an operator designed to **automatically generate image captions using large vision-language models (VLMs)**.  
 Given input images, it constructs prompts to guide the model in producing high-quality scene or object descriptions. This is suitable for multimodal annotation, dataset construction, and image-text matching tasks.
 
 **Features:**
@@ -65,7 +65,7 @@ read image paths → **validate DataFrame** → construct prompts → call the m
 ```python
 from dataflow.utils.storage import FileStorage
 from dataflow.serving.local_model_vlm_serving import LocalModelVLMServing_vllm
-from dataflow.operators.core_vision import ImageCaptionGenerate
+from dataflow.operators.core_vision import ImageCaptionGenerator
 
 # Step 1: Launch local model service
 serving = LocalModelVLMServing_vllm(
@@ -86,7 +86,7 @@ storage = FileStorage(
 storage.step() # Load data
 
 # Step 3: Initialize and run the operator
-generator = ImageCaptionGenerate(serving)
+generator = ImageCaptionGenerator(serving)
 generator.run(
     storage=storage,
     input_modal_key="image",

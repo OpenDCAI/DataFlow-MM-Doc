@@ -31,8 +31,8 @@ export const MMOperators: ThemeNote = defineNoteConfig({
                 'generate/image_region_caption',
                 'generate/image_scale_caption',
                 'generate/image_gcot',
-                'generate/image_skvqa',
                 'generate/image_caprl',
+                'generate/multirole_videoqa',
                 'eval/image_clip_evaluator',
                 'eval/image_longclip_evaluator',
                 'eval/image_vqa_evaluator',
@@ -43,7 +43,8 @@ export const MMOperators: ThemeNote = defineNoteConfig({
                 'filter/image_consistency_filter',
                 'filter/image_deduplication_filter',
                 'filter/image_diversity_filter',
-                'filter/image_sensitive_filter'
+                'filter/image_sensitive_filter',
+                'refine/wiki_qa_refiner'
             ],
         },
         {

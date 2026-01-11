@@ -7,7 +7,7 @@ permalink: /en/mm_operators/generate/image_qa/
 
 ## 📘 Overview
 
-`ImageQAGenerate` is an operator designed to **automatically generate Question-Answer (QA) pairs based on image content (Visual QA)**.  
+`ImageQAGenerator` is an operator designed to **automatically generate Question-Answer (QA) pairs based on image content (Visual QA)**.  
 It intelligently proposes relevant questions based on the image scene and generates corresponding reference answers.
 
 **Features:**
@@ -66,7 +66,7 @@ The `run` function executes the main operator logic: read image paths → **vali
 ```python
 from dataflow.utils.storage import FileStorage
 from dataflow.serving.local_model_vlm_serving import LocalModelVLMServing_vllm
-from dataflow.operators.core_vision import ImageQAGenerate
+from dataflow.operators.core_vision import ImageQAGenerator
 
 # Step 1: Launch local model service
 serving = LocalModelVLMServing_vllm(
@@ -87,7 +87,7 @@ storage = FileStorage(
 storage.step() # Load data
 
 # Step 3: Initialize and run the operator
-qa_generator = ImageQAGenerate(serving)
+qa_generator = ImageQAGenerator(serving)
 qa_generator.run(
     storage=storage,
     input_modal_key="image",

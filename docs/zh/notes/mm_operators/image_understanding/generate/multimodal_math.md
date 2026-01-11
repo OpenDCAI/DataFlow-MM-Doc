@@ -7,7 +7,7 @@ permalink: /zh/mm_operators/generate/multimodal_math/
 
 ## 📘 概述
 
-`MultimodalMathGenerate` 是一个用于 **自动生成数学函数图像 + 数学问答对** 的多模态数据生成算子。  
+`MultimodalMathGenerator` 是一个用于 **自动生成数学函数图像 + 数学问答对** 的多模态数据生成算子。  
 它支持一次、二次、正弦、指数等多种函数类型，并根据输入数据中的 `mode` 字段（`simple` 或 `complex`）生成对应的简单计算题或高阶概念题，适用于教育场景、视觉问答模型训练和数学推理评测。
 
 -----
@@ -69,7 +69,7 @@ def run(
 
 ```python
 from dataflow.utils.storage import FileStorage
-from dataflow.operators.core_math import MultimodalMathGenerate
+from dataflow.operators.core_math import MultimodalMathGenerator
 import pandas as pd
 
 # Step 1: 准备一个包含 'mode' 列的输入文件 (例如 data/math_tasks.jsonl)
@@ -87,7 +87,7 @@ storage = FileStorage(
 storage.step() # 读取数据
 
 # Step 2: 初始化算子
-math_generator = MultimodalMathGenerate(
+math_generator = MultimodalMathGenerator(
     image_dir="./math_plots",
     seed=42
 )

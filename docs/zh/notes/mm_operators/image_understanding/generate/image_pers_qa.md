@@ -7,7 +7,7 @@ permalink: /zh/mm_operators/generate/image_pers_qa/
 
 ## 📘 概述
 
-`PersQAGenerate` 是一个用于**基于视觉语言大模型（VLM）生成个性化图片问答**的算子。  
+`PersQAGenerator` 是一个用于**基于视觉语言大模型（VLM）生成个性化图片问答**的算子。  
 它会：
 
 * 自动为图像中的主要人物分配名称标签（在代码中硬编码为 `<mam>`）；
@@ -73,7 +73,7 @@ def run(
 ```python
 from dataflow.utils.storage import FileStorage
 from dataflow.serving.local_model_vlm_serving import LocalModelVLMServing_vllm
-from dataflow.operators.core_vision import PersQAGenerate
+from dataflow.operators.core_vision import PersQAGenerator
 
 # Step 1: 启动本地模型服务
 serving = LocalModelVLMServing_vllm(
@@ -94,7 +94,7 @@ storage = FileStorage(
 storage.step()
 
 # Step 3: 初始化并运行算子
-generator = PersQAGenerate(serving)
+generator = PersQAGenerator(serving)
 generator.run(
     storage=storage,
     input_modal_key="image",
