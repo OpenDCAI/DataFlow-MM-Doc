@@ -1,20 +1,30 @@
 ---
-title: Personalized Image QA Generation
+title: PersQAGenerator
 createTime: 2025/10/15 18:20:00
-icon: material-symbols-light:quiz
+# icon: material-symbols-light:quiz
 permalink: /en/mm_operators/generate/image_pers_qa/
 ---
 
 ## 📘 Overview
 
-`PersQAGenerate` is an operator for **generating personalized image question-answer pairs using large vision-language models (VLMs)**.  
-It can:  
-- Automatically assign name tags to main characters in images (e.g., `<mam>`);  
-- Randomly select suitable questions from predefined templates;  
-- Guide the model to start answers with the character's name;  
-- Output structured QA pairs suitable for multimodal QA dataset construction and evaluation of character understanding.
+`PersQAGenerator` is an operator designed to **generate personalized image Question-Answer (QA) pairs based on large vision-language models (VLMs)**.  
+It performs the following steps:
 
----
+  * Automatically assigns a name tag to the main character in the image (hardcoded as `<mam>` in the implementation).
+  * Randomly selects an appropriate question from predefined templates.
+  * Guides the VLM to start the answer with the character's name tag.
+  * Outputs structured QA pairs, suitable for multimodal QA dataset construction and character role understanding evaluation.
+
+**Features:**
+
+  * Supports generating personalized QA for specific characters in images.
+  * Automatically assigns name tags (e.g., `<mam>`) to the main subject.
+  * Randomly selects relevant questions from predefined templates.
+  * Requires the model to start answers with the main character's name tag.
+  * Supports batch processing of multiple images.
+  * Output includes the complete Question-Answer pair in the format: `Question: ..., Answer: ...`.
+
+-----
 
 ## 🏗️ `__init__` Function
 
@@ -28,11 +38,11 @@ def __init__(
 
 ## 🧾 `__init__` Parameters
 
-| Parameter     | Type            | Default | Description                                                   |
-| :------------ | :-------------- | :------ | :------------------------------------------------------------ |
-| `llm_serving` | `LLMServingABC` | -       | Model serving object used to call VLM for generating QA pairs |
+| Parameter     | Type            | Default | Description                                                     |
+| :------------ | :-------------- | :------ | :-------------------------------------------------------------- |
+| `llm_serving` | `LLMServingABC` | -       | **Model Serving Object** used to call the VLM for QA generation |
 
----
+-----
 
 ## ⚡ `run` Function
 
@@ -40,71 +50,68 @@ def __init__(
 def run(
     self,
     storage: DataFlowStorage,
-    multi_modal_key: str = "image",
-    output_key: str = "pers_qa"
+    input_modal_key: str = "image",
+    output_key: str = "output"
 ):
     ...
 ```
 
-The `run` function executes the main QA generation workflow:
-read image paths → construct questions and prompts → call the model → return structured QA results.
+The `run` function executes the main QA generation logic: read image paths → construct questions and prompts → call the model → return structured QA results.
 
 ## 🧾 `run` Parameters
 
-| Parameter         | Type              | Default     | Description                    |
-| :---------------- | :---------------- | :---------- | :----------------------------- |
-| `storage`         | `DataFlowStorage` | -           | Dataflow storage object        |
-| `multi_modal_key` | `str`             | `"image"`   | Multimodal input field name    |
-| `output_key`      | `str`             | `"pers_qa"` | Output field name for QA pairs |
+| Parameter         | Type              | Default     | Description                                                          |
+| :---------------- | :---------------- | :---------- | :------------------------------------------------------------------- |
+| `storage`         | `DataFlowStorage` | -           | Dataflow storage object                                              |
+| `input_modal_key` | `str`             | `"image"`   | **Multimodal Input Field Name** (image path)                         |
+| `output_key`      | `str`             | `"output"`  | **Model Output Field Name** (personalized QA text, defaults to `output`) |
 
----
+-----
 
 ## 🧠 Example Usage
 
 ```python
 from dataflow.utils.storage import FileStorage
 from dataflow.serving.local_model_vlm_serving import LocalModelVLMServing_vllm
-from dataflow.operators.core_vision import PersQAGenerate
+from dataflow.operators.core_vision import PersQAGenerator
 
 # Step 1: Launch local model service
 serving = LocalModelVLMServing_vllm(
-    hf_model_name_or_path="./models/Qwen2.5-VL-3B-Instruct",
+    hf_model_name_or_path="Qwen/Qwen2.5-VL-3B-Instruct",
     vllm_tensor_parallel_size=1,
     vllm_temperature=0.7,
     vllm_top_p=0.9,
     vllm_max_tokens=512
 )
 
-# Step 2: Prepare storage
+# Step 2: Set up storage
 storage = FileStorage(
-    first_entry_file_name="data/example.jsonl",
+    first_entry_file_name="dataflow/example/Image2TextPipeline/test_image2caption.jsonl",
     cache_path="./cache_local",
     file_name_prefix="pers_qa",
     cache_type="jsonl",
-    media_key="image",
-    media_type="image"
 )
 storage.step()
 
 # Step 3: Initialize and run the operator
-generator = PersQAGenerate(serving)
+generator = PersQAGenerator(serving)
 generator.run(
     storage=storage,
-    multi_modal_key="image",
+    input_modal_key="image",
     output_key="pers_qa"
 )
 ```
 
----
+-----
 
 ## 🧾 Default Output Format
 
-| Field     | Type        | Description                                                              |
-| :-------- | :---------- | :----------------------------------------------------------------------- |
-| `image`   | `List[str]` | Input image paths                                                        |
-| `pers_qa` | `str`       | Generated personalized QA text in the format `Question: ... Answer: ...` |
+| Field     | Type        | Description                                                          |
+| :-------- | :---------- | :------------------------------------------------------------------- |
+| `image`   | `List[str]` | Input image paths                                                    |
+| `pers_qa` | `str`       | Generated personalized QA pair text, format: `Question: ..., Answer: ...` |
 
----
+-----
 
 ### 📥 Example Input
 
@@ -116,6 +123,8 @@ generator.run(
 ### 📤 Example Output
 
 ```jsonl
-{"image": ["./test/example1.jpg"], "pers_qa": "Question: <mam> What is she doing? Answer: <mam> is smiling at the camera."}
-{"image": ["./test/example2.jpg"], "pers_qa": "Question: <mam> Where is she? Answer: <mam> is in a cafe."}
+{"image": ["./test/example1.jpg"], "pers_qa": "Question: <mam> is doing what?, Answer: <mam> is smiling at the camera."}
+{"image": ["./test/example2.jpg"], "pers_qa": "Question: Where is <mam>?, Answer: <mam> is in a cafe."}
 ```
+
+> **Tips:** Using a stronger Multimodal Large Language Model (MLLM) can ensure more accurate format generation.

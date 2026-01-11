@@ -1,23 +1,23 @@
 ---
-title: Multimodal Math Question Generation
+title: MultimodalMathGenerator
 createTime: 2025/10/15 19:00:00
-icon: material-symbols-light:functions
+# icon: material-symbols-light:functions
 permalink: /en/mm_operators/generate/multimodal_math/
 ---
 
 ## 📘 Overview
 
-`MultimodalMathGenerate` is an operator for **automatically generating math function plots along with math question-answer pairs**.  
-It supports various function types such as linear, quadratic, sine, and exponential functions. Users can generate both simple and complex math problems, with automatically plotted corresponding function images. This is suitable for educational scenarios, visual QA model training, and mathematical reasoning evaluation.
+`MultimodalMathGenerator` is a data generation operator for **automatically creating function plots (images) and corresponding math Question-Answer (QA) pairs**.  
+It supports various function types (linear, quadratic, sine, exponential, etc.) and generates simple calculation problems or advanced conceptual problems based on the `mode` field (`simple` or `complex`) in the input data. This operator is suitable for educational applications, visual QA model training, and math reasoning evaluation.
 
----
+-----
 
 ## 🏗️ `__init__` Function
 
 ```python
 def __init__(
     self,
-    image_dir: str = "/data0/mt/Dataflow-MM-Preview/cache",
+    image_dir: str = "~/cache",
     seed: int | None = None
 ):
     ...
@@ -25,12 +25,12 @@ def __init__(
 
 ## 🧾 `__init__` Parameters
 
-| Parameter   | Type          | Default                                 | Description                                |
-| :---------- | :------------ | :-------------------------------------- | :----------------------------------------- |
-| `image_dir` | `str`         | `"/data0/mt/Dataflow-MM-Preview/cache"` | Directory to save generated function plots |
-| `seed`      | `int \| None` | `None`                                  | Random seed for reproducibility            |
+| Parameter   | Type          | Default | Description                                                     |
+| :---------- | :------------ | :------ | :-------------------------------------------------------------- |
+| `image_dir` | `str`         | `"~/cache"` | Directory used to save the generated function plots             |
+| `seed`      | `int \| None` | `None`  | Random seed to ensure reproducibility of generated results      |
 
----
+-----
 
 ## ⚡ `run` Function
 
@@ -38,108 +38,117 @@ def __init__(
 def run(
     self,
     storage: DataFlowStorage,
-    n: int = 200,
-    mode: str = "complex",
-    output_key: str = "multimodal_math"
+    input_key: str = "mode",
 ):
     ...
 ```
 
-Executes the main workflow, automatically generating a specified number of function plots along with corresponding math QA pairs.
+The `run` function executes the main operator logic: it reads the data from `storage`, generates the corresponding function image and math QA pair based on the value in the `input_key` field for each row, and then horizontally concatenates the newly generated columns back to the original data.
 
----
+-----
 
 ## 🧾 `run` Parameters
 
-| Parameter    | Type              | Default             | Description                                                                                                 |
-| :----------- | :---------------- | :------------------ | :---------------------------------------------------------------------------------------------------------- |
-| `storage`    | `DataFlowStorage` | -                   | Dataflow storage object                                                                                     |
-| `n`          | `int`             | `200`               | Number of samples to generate                                                                               |
-| `mode`       | `str`             | `"complex"`         | Generation mode: `"simple"` for straightforward numeric problems, `"complex"` for advanced concept problems |
-| `output_key` | `str`             | `"multimodal_math"` | Output field name prefix for generated data                                                                 |
+| Parameter   | Type              | Default | Description                                                              |
+| :---------- | :---------------- | :------ | :----------------------------------------------------------------------- |
+| `storage`   | `DataFlowStorage` | -       | Dataflow storage object (contains the rows to be processed)              |
+| `input_key` | `str`             | `"mode"` | **Field name for the mode column**. Its value determines whether to generate a `"simple"` or `"complex"` problem. |
 
----
+-----
 
-## 🧠 Example Usage
+## 🧠 Mode Description and Example Usage
+
+### 📐 Mode Description
+
+| Mode | `mode` Column Value | Characteristics | Problem Type |
+| :--- | :--- | :--- | :--- |
+| **Simple** | `"simple"` | Basic function recognition and numerical substitution. | Given the function expression $f(x)$, find the function value $f(a)$ at $x=a$. |
+| **Complex** | Other values (e.g., `"complex"`) | Emphasizes mathematical analysis skills (derivatives, extrema, monotonicity). | Randomly generates questions on derivative sign, extreme points within an interval, or monotonicity judgment. |
+
+### 🧩 Example Usage (Requires an input file pre-populated with a `mode` column)
 
 ```python
 from dataflow.utils.storage import FileStorage
-from dataflow.operators.core_math import MultimodalMathGenerate
+from dataflow.operators.core_math import MultimodalMathGenerator
+import pandas as pd
 
-# Step 1: Prepare storage
+# Step 1: Prepare an input file containing the 'mode' column (e.g., data/math_tasks.jsonl)
+# Assuming data/math_tasks.jsonl contains:
+# {"id": 1, "mode": "simple"}
+# {"id": 2, "mode": "complex"}
+# {"id": 3, "mode": "complex"}
+
 storage = FileStorage(
-    first_entry_file_name="data/math_samples.jsonl",
+    first_entry_file_name="data/math_tasks.jsonl",
     cache_path="./cache_local",
-    file_name_prefix="math",
+    file_name_prefix="math_out",
     cache_type="jsonl"
 )
+storage.step() # Load data
 
-# Step 2: Initialize operator
-math_generator = MultimodalMathGenerate(
+# Step 2: Initialize the operator
+math_generator = MultimodalMathGenerator(
     image_dir="./math_plots",
     seed=42
 )
 
-# Step 3: Generate complex math problems (derivatives, extrema, monotonicity)
+# Step 3: Run the operator, generating problems based on the 'mode' column of each row
 math_generator.run(
     storage=storage,
-    n=10,
-    mode="complex",
-    output_key="multimodal_math"
-)
-
-# Step 4: Generate simple numeric problems
-math_generator.run(
-    storage=storage,
-    n=10,
-    mode="simple",
-    output_key="multimodal_math_simple"
+    input_key="mode" # Specify 'mode' column to control generation
 )
 ```
 
----
+-----
 
 ## 🧾 Default Output Format
 
-| Field        | Type  | Description                           |
-| :----------- | :---- | :------------------------------------ |
-| `image_path` | `str` | Path to the generated function plot   |
-| `question`   | `str` | Automatically generated math question |
-| `answer`     | `str` | Answer to the question                |
-| `solution`   | `str` | Detailed step-by-step solution        |
+The operator will **horizontally concatenate** the following four fields onto the original input DataFrame:
 
----
+| Field        | Type | Description                                   |
+| :----------- | :--- | :-------------------------------------------- |
+| `image_path` | `str` | Local path where the function plot image is saved |
+| `question`   | `str` | Automatically generated mathematical question |
+| `answer`     | `str` | Answer                                        |
+| `solution`   | `str` | Detailed solution steps and explanation       |
+
+-----
 
 ### 📥 Example Input
 
+> **Note:** The operator relies on the number of rows in the input `storage` and the value of the `input_key` column (defaults to `mode`) to generate data.
+
 ```jsonl
-{}
+{"id": 1, "mode": "simple"}
+{"id": 2, "mode": "complex"}
 ```
 
-> This operator does not depend on external input data and generates samples directly.
+-----
 
----
-
-### 📤 Example Output (Simple Mode)
+### 📤 Example Output (Simple Mode Row)
 
 ```jsonl
 {
+  "id": 1,
+  "mode": "simple",
   "image_path": "./math_plots/plot_0.png",
-  "question": "The function plot represents f(x) = x². What is the value of the function at x=3.5?",
+  "question": "The function plot represents f(x) = x². What is the function value at x=3.5?",
   "answer": "12.25",
-  "solution": "According to the function expression f(x) = x², substituting x=3.5 gives y=12.25."
+  "solution": "According to the function expression f(x) = x², substitute x=3.5 to get y=12.25."
 }
 ```
 
----
+-----
 
-### 📤 Example Output (Complex Mode)
+### 📤 Example Output (Complex Mode Row)
 
 ```jsonl
 {
-  "image_path": "./math_plots/plot_7.png",
-  "question": "The function plot represents f(x) = sin(x). Determine whether the rate of change of the function at x=2.5 is positive or negative.",
-  "answer": "Negative",
-  "solution": "By observing the slope near x=2.5 on the plot, the rate of change is negative."
+  "id": 2,
+  "mode": "complex",
+  "image_path": "./math_plots/plot_1.png",
+  "question": "The function plot represents f(x) = sin(x). Is the rate of change (derivative) at x=2.5 positive or negative?",
+  "answer": "negative",
+  "solution": "By observing the slope of the plot near x=2.5, the rate of change is negative."
 }
 ```

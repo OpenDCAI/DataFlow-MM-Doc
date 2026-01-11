@@ -53,10 +53,10 @@ def __init__(
 def run(
     self,
     storage: DataFlowStorage,
-    question_key: str = "question",
-    image_key: str = "image",
-    tree_key: Optional[str] = "tree",
-    true_answer_key: str = "true_answer",
+    input_question_key: str = "question",
+    input_image_key: str = "image",
+    input_tree_key: Optional[str] = "tree",
+    input_true_answer_key: str = "true_answer",
     output_key: str = "sft_entry",
 )
 ```
@@ -66,10 +66,10 @@ def run(
 | Parameter         | Type              | Default         | Description                           |
 | ----------------- | ----------------- | --------------- | ------------------------------------- |
 | `storage`         | `DataFlowStorage` | —               | DataFlow storage interface.           |
-| `question_key`    | `str`             | `"question"`    | Column for input question text.       |
-| `image_key`       | `str`             | `"image"`       | Column for image file path.           |
-| `tree_key`        | `Optional[str]`   | `"tree"`        | MCTS search tree field, if available. |
-| `true_answer_key` | `str`             | `"true_answer"` | Ground-truth coordinate or answer.    |
+| `input_question_key`    | `str`             | `"question"`    | Column for input question text.       |
+| `input_image_key`       | `str`             | `"image"`       | Column for image file path.           |
+| `input_tree_key`        | `Optional[str]`   | `"tree"`        | MCTS search tree field, if available. |
+| `input_true_answer_key` | `str`             | `"true_answer"` | Ground-truth coordinate or answer.    |
 | `output_key`      | `str`             | `"sft_entry"`   | Output column name for SFT entries.   |
 
 ---
@@ -94,9 +94,9 @@ op = VisionMCTSReasoningSFTGenerate(
 
 op.run(
     storage=storage,
-    question_key="question",
-    image_key="image",
-    true_answer_key="true_answer",
+    input_question_key="question",
+    input_image_key="image",
+    input_true_answer_key="true_answer",
     output_key="sft_entry",
 )
 ```

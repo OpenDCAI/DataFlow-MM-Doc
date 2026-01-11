@@ -1,15 +1,19 @@
 ---
-title: Image Caption Generation
+title: ImageCaptionGenerator
 createTime: 2025/10/15 15:00:00
-icon: material-symbols-light:image
+# icon: material-symbols-light:image
 permalink: /en/mm_operators/generate/image_caption/
 ---
 
 ## 📘 Overview
 
-`ImageCaptionGenerate` is an operator designed to **automatically generate image captions using large vision-language models (VLMs)**.  
-Given input images, it constructs prompts to guide the model in producing high-quality scene or object descriptions.  
-This is suitable for multimodal annotation, dataset construction, and image-text matching tasks.
+`ImageCaptionGenerator` is an operator designed to **automatically generate image captions using large vision-language models (VLMs)**.  
+Given input images, it constructs prompts to guide the model in producing high-quality scene or object descriptions. This is suitable for multimodal annotation, dataset construction, and image-text matching tasks.
+
+**Features:**
+* Supports batch processing of multiple images.
+* Generates high-quality descriptions using VLMs like Qwen.
+* Automatically handles image input and prompt construction.
 
 ---
 
@@ -25,11 +29,11 @@ def __init__(
 
 ## 🧾 `__init__` Parameters
 
-| Parameter     | Type            | Default | Description                                                   |
-| :------------ | :-------------- | :------ | :------------------------------------------------------------ |
-| `llm_serving` | `LLMServingABC` | -       | Model serving object used to call VLM for generating captions |
+| Parameter     | Type            | Default | Description                                                     |
+| :------------ | :-------------- | :------ | :-------------------------------------------------------------- |
+| `llm_serving` | `LLMServingABC` | -       | **Model Serving Object** used to call the VLM for caption generation |
 
----
+-----
 
 ## ⚡ `run` Function
 
@@ -37,35 +41,35 @@ def __init__(
 def run(
     self,
     storage: DataFlowStorage,
-    multi_modal_key: str = "image",
-    output_key: str = "caption"
+    input_modal_key: str = "image",
+    output_key: str = "output"
 ):
     ...
 ```
 
 The `run` function executes the main caption generation workflow:
-read image paths → construct prompts → call the model → generate text captions → write results to output.
+read image paths → **validate DataFrame** → construct prompts → call the model → generate text captions → write results to output.
 
 ## 🧾 `run` Parameters
 
-| Parameter         | Type              | Default     | Description                    |
-| :---------------- | :---------------- | :---------- | :----------------------------- |
-| `storage`         | `DataFlowStorage` | -           | Dataflow storage object        |
-| `multi_modal_key` | `str`             | `"image"`   | Multimodal input field name    |
-| `output_key`      | `str`             | `"caption"` | Output field name for captions |
+| Parameter         | Type              | Default     | Description                                           |
+| :---------------- | :---------------- | :---------- | :---------------------------------------------------- |
+| `storage`         | `DataFlowStorage` | -           | Dataflow storage object                               |
+| `input_modal_key` | `str`             | `"image"`   | **Multimodal Input Field Name** (e.g., image paths)   |
+| `output_key`      | `str`             | `"output"`  | **Model Output Field Name** (the generated description text) |
 
----
+-----
 
 ## 🧠 Example Usage
 
 ```python
 from dataflow.utils.storage import FileStorage
 from dataflow.serving.local_model_vlm_serving import LocalModelVLMServing_vllm
-from dataflow.operators.core_vision import ImageCaptionGenerate
+from dataflow.operators.core_vision import ImageCaptionGenerator
 
 # Step 1: Launch local model service
 serving = LocalModelVLMServing_vllm(
-    hf_model_name_or_path="./models/Qwen2.5-VL-3B-Instruct",
+    hf_model_name_or_path="Qwen/Qwen2.5-VL-3B-Instruct",
     vllm_tensor_parallel_size=1,
     vllm_temperature=0.7,
     vllm_top_p=0.9,
@@ -74,25 +78,23 @@ serving = LocalModelVLMServing_vllm(
 
 # Step 2: Prepare input data
 storage = FileStorage(
-    first_entry_file_name="data/example_caption.jsonl",
+    first_entry_file_name="dataflow/example/image_to_text_pipeline/capsbench_captions.jsonl",
     cache_path="./cache_local",
-    file_name_prefix="caption",
+    file_name_prefix="dataflow_cache_step",
     cache_type="jsonl",
-    media_key="image",
-    media_type="image"
 )
-storage.step()
+storage.step() # Load data
 
 # Step 3: Initialize and run the operator
-generator = ImageCaptionGenerate(serving)
+generator = ImageCaptionGenerator(serving)
 generator.run(
     storage=storage,
-    multi_modal_key="image",
-    output_key="caption"
+    input_modal_key="image",
+    output_key="caption" # Explicitly specifying output field as "caption" in the example
 )
 ```
 
----
+-----
 
 ## 🧾 Default Output Format
 
@@ -101,7 +103,7 @@ generator.run(
 | `image`   | `List[str]` | Input image paths            |
 | `caption` | `str`       | Generated image caption text |
 
----
+-----
 
 ### 📥 Example Input
 

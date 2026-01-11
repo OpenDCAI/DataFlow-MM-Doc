@@ -1,13 +1,18 @@
 ---
-title: image_aesthetic_filter
-createTime: 2025/10/15 19:56:51
-icon: material-symbols-light:image
+title: ImageAestheticFilter
+createTime: 2025/10/15 15:45:04
+# icon: material-symbols-light:image
 permalink: /en/mm_operators/filter/image_aesthetic_filter/
 ---
 ## 📘 Overview
-`ImageAestheticFilter` is a **basic image aesthetic filtering operator** designed to quickly remove low-quality images.  
-It evaluates four grayscale-based metrics for each image: **sharpness** (Laplacian variance), **brightness** (mean), **contrast** (standard deviation), and **extreme pixel ratio** (proportion of near-black or near-white pixels).  
-A sample is retained only if all four metrics meet the defined thresholds.
+`ImageAestheticFilter` performs **basic quality and aesthetic filtering** over input images by jointly evaluating:
+
+- Sharpness (degree of blur)
+- Global brightness (overly dark / overly bright)
+- Contrast (whether the image appears flat and washed-out)
+- Proportions of near-black / near-white pixels (whether the image is almost entirely black or white)
+
+The operator is intended to remove **low-quality images** that are blurry, strongly mis-exposed, or almost uniform in color, thereby providing cleaner inputs for subsequent detection, recognition, retrieval, or generation tasks.
 
 
 
@@ -20,18 +25,20 @@ def __init__(
     contrast_thresh: float = 40.0,
     max_black_ratio: float = 0.90,
     max_white_ratio: float = 0.90
-)
+):
+  ...
 ```
 
 
 ## `init` Parameters
-| Parameter | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `blur_thresh` | `float` | `150.0` | Threshold for image sharpness (Laplacian variance); higher values indicate stricter sharpness requirements. |
-| `brightness_range` | `tuple[float, float]` | `(30, 230)` | Allowed average brightness range (grayscale values 0–255). |
-| `contrast_thresh` | `float` | `40.0` | Minimum required contrast level (grayscale standard deviation); higher means more contrast required. |
-| `max_black_ratio` | `float` | `0.90` | Upper limit for near-black pixel ratio (<10); exceeding this suggests extreme darkness or large occluded areas. |
-| `max_white_ratio` | `float` | `0.90` | Upper limit for near-white pixel ratio (>245); exceeding this indicates overexposure or excessive white areas. |
+| Parameter          | Type                    | Default               | Description |
+| :----------------- | :---------------------- | :-------------------- | :---------- |
+| `blur_thresh`      | `float`                 | `150.0`               | Sharpness threshold based on the variance of the Laplacian. Higher values correspond to sharper images; images with values below this threshold are treated as blurry. |
+| `brightness_range` | `tuple[float, float]`   | `(30, 230)`           | Admissible range of global brightness (mean grayscale intensity). Images with mean intensity below the lower bound are considered too dark; those above the upper bound are considered too bright. Only images whose mean lies within this interval are regarded as properly exposed. |
+| `contrast_thresh`  | `float`                 | `40.0`                | Contrast threshold based on the standard deviation of the grayscale image. Values below this threshold indicate insufficient contrast (visually “flat” or washed-out images). |
+| `max_black_ratio`  | `float`                 | `0.90`                | Maximum allowed proportion of **near-black pixels** (`gray < 10`). Images exceeding this ratio are treated as almost entirely black. |
+| `max_white_ratio`  | `float`                 | `0.90`                | Maximum allowed proportion of **near-white pixels** (`gray > 245`). Images exceeding this ratio are treated as almost entirely white. |
+
 
 
 ## `run`
@@ -39,16 +46,16 @@ def __init__(
 def run(
     self,
     storage: DataFlowStorage,
-    image_key: str
+    input_image_key: str = "image_path",
 ):
     ...
 ```
 
 Parameters
-| Parameter | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `storage` | `DataFlowStorage` | — | The Dataflow storage object used for reading and writing data. |
-| `image_key` | `str` | — | The column name containing the image path (e.g., `"image_path"`). |
+| Parameter        | Type              | Default         | Description |
+| :--------------- | :---------------- | :-------------- | :---------- |
+| `storage`        | `DataFlowStorage` | —               | Dataflow storage object used to read and write the DataFrame. |
+| `input_image_key`| `str`             | `"image_path"`  | Name of the column containing image paths. |
 
 
 
@@ -58,36 +65,36 @@ Parameters
 from dataflow.utils.storage import FileStorage
 from dataflow.operators.core_vision import ImageAestheticFilter
 
-# 1) Prepare FileStorage (must contain an image_path column)
+# 1) Prepare FileStorage (must contain at least an image_path column)
 storage = FileStorage(
-    first_entry_file_name="data/aesthetic_input.jsonl",
+    first_entry_file_name="./dataflow/example/test_image_filter/test_image_filter.jsonl",
     cache_path="./cache_local",
-    file_name_prefix="img_aesthetic",
+    file_name_prefix="aes_filter",
     cache_type="jsonl"
 )
 
-# 2) Initialize the operator (thresholds can be adjusted as needed)
-flt = ImageAestheticFilter(
+# 2) Initialize the aesthetic filter (thresholds can be tuned as needed)
+aes_filter = ImageAestheticFilter(
     blur_thresh=150.0,
     brightness_range=(30, 230),
     contrast_thresh=40.0,
     max_black_ratio=0.90,
-    max_white_ratio=0.90
+    max_white_ratio=0.90,
 )
 
-# 3) Execute filtering
-cols = flt.run(
+# 3) Run filtering: only images passing the quality checks are retained
+cols = aes_filter.run(
     storage=storage.step(),
-    image_key="image_path"
+    input_image_key="image_path",
 )
 print(cols)  # ["image_path"]
 ```
 
 ### 🧾 Default Output Format
-| Field | Type | Description |
-| :--- | :--- | :--- |
-| `image_path` | `string` | The retained image path after filtering. |
-| `quality` | `bool` | The image quality flag; only samples with `quality=True` are kept in the output. |
+| Field name                                      | Type      | Default | Description |
+| :---------------------------------------------- | :-------- | :------ | :---------- |
+| `image_path` (or the column specified by `input_image_key`) | `string`  | —      | Input image path. |
+| `quality`                                      | `boolean` | —      | Indicates whether the image passes the aesthetic/quality filter. Only rows with `quality == true` are preserved in the final output. |
 
 
 Example Input:

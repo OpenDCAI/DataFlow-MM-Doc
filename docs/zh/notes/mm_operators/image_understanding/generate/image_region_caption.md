@@ -31,8 +31,8 @@ def __init__(
 def run(
     self, 
     storage: DataFlowStorage, 
-    image_key: str = "image", 
-    bbox_key: str = "bbox", 
+    input_image_key: str = "image", 
+    input_bbox_key: str = "bbox", 
     output_key: str = "mdvp_record"
 ):
 ```
@@ -41,8 +41,8 @@ def run(
 | 参数名 | 类型 | 默认值 | 描述 |
 | :--- | :--- | :--- | :--- |
 | storage | DataFlowStorage | 无默认值（必需） | 用于文件操作和缓存路径管理的存储实例 |
-| image_key | str | "image" | 输入 JSONL 数据中图像路径的字段名 |
-| bbox_key | str | "bbox" | 输入数据中边界框的字段名。如果缺失，则自动从图像中提取 |
+| input_image_key | str | "image" | 输入 JSONL 数据中图像路径的字段名 |
+| input_bbox_key | str | "bbox" | 输入数据中边界框的字段名。如果缺失，则自动从图像中提取 |
 | output_key | str | "mdvp_record" | 结果数据中输出区域描述记录的字段名 |
 
 ## 🧠 使用示例
@@ -81,8 +81,8 @@ operator = ImageRegionCaptionGenerate(llm_serving=model, config=cfg)
 
 operator.run(
     storage=storage.step(),
-    image_key="image",
-    bbox_key="bbox",
+    input_image_key="image",
+    input_bbox_key="bbox",
     output_key="mdvp_record"
 )
 ```
