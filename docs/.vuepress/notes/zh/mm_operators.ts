@@ -86,8 +86,50 @@ export const MMOperators: ThemeNote = defineNoteConfig({
             icon: 'carbon:idea',
             prefix: 'video_understanding',
             items: [
-                'install_video_understanding',
-                'video_caption',
+                {
+                    text: '安装',
+                    collapsed: false,
+                    prefix: '',
+                    items: ['install_video_understanding'],
+                },
+                {
+                    text: "generate",
+                    collapsed: false,
+                    prefix: 'generate/',
+                    items: [
+                        'video_caption',
+                        'video_merged_caption',
+                        'video_qa',
+                        'video_cotqa',
+                        'video_clip'
+                    ]
+                },
+                {
+                    text: "eval",
+                    collapsed: false,
+                    prefix: 'eval/',
+                    items: [
+                        'general_text_answer_evaluator',
+                        'emscore_evaluator',
+                        'video_aesthetic_evaluator',
+                        'video_luminance_evaluator',
+                        'video_ocr_evaluator',
+                    ]
+                },
+                {
+                    text: "filter",
+                    collapsed: false,
+                    prefix: 'filter/',
+                    items: [
+                        'video_resolution_filter',
+                        'video_motion_score_filter',
+                        'video_clip_filter',
+                        'video_info_filter',
+                        'video_scene_filter',
+                        'video_score_filter',
+                        'video_frame_filter',
+                    ]
+                },
             ],
         },
         {

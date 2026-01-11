@@ -6,5 +6,5 @@ permalink: /en/mm_operators/install_audio_understanding/
 ---
 # Installation
 ```bash
-pip install dataflow-mm[audio]
+pip install open-dataflow-mm[audio]
 ```

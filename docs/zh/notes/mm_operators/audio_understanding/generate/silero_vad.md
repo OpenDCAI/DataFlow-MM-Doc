@@ -15,26 +15,6 @@ def __init__(self,
     source: str = "github",
     device: Union[str, List[str]] = "cuda",
     num_workers: int = 1,
-)
-```
-
-## `init`参数说明
-| 参数 | 类型 | 默认值 | 描述 |
-| --- | --- | --- | --- |
-| `repo_or_dir` | `str` | `snakers4/silero-vad` | 模型的存储仓库或本地仓库。 |
-| `source` | `str` | `github` | 模型的来源，可选值为 `github` 或 `local`。 |
-| `device` | `Union[str, List[str]]` | `cuda` | 模型运行的设备，可选值为 `cuda` 或 `cpu`，也可以选择传入列表，如`["cuda:0", "cuda:1"]`，表示在多个GPU上初始化多个模型并行运行。 |
-| `num_workers` | `int` | `1` | 算子并行数，初始化`num_workers`个模型，依次分配在`device`参数指定的设备上。当`num_workers`初始化数量大于设备数量时，会自动在每个设备上初始化多个模型并发运行。如：指定设备为`["cuda:0", "cuda:1"]`，`num_workers`为4，则会在`cuda:0`上初始化两个模型，在`cuda:1`上初始化两个模型。 |
-
-注意：Silero VAD模型使用Github仓库的权重加载，而非huggingface仓库。
-
-## `run`函数
-```python
-def run(
-    self,
-    storage: DataFlowStorage,
-    input_audio_key: str = "audio",
-    output_answer_key: str = "timestamps",
     threshold: float = 0.5,
     use_min_cut: bool = False,
     sampling_rate: int = 16000,
@@ -46,18 +26,17 @@ def run(
     time_resolution: int = 1,
     neg_threshold: float = None,
     min_silence_at_max_speech: float = 0.098,
-    use_max_poss_sil_at_max_speech: bool = True            
-    )
+    use_max_poss_sil_at_max_speech: bool = True 
+)
 ```
-执行算子主逻辑，从存储中读取输入 DataFrame，调用 Silero VAD 模型生成语音片段时间戳，并将结果写回存储。
 
-
-参数
-| 参数名 | 类型 | 默认值 | 说明 |
-| :--- | :--- | :--- | :--- |
-| `storage` | `DataFlowStorage` | **必填** | 输入输出数据存储 |
-| `input_audio_key` | `str` | `audio` | 输入音频数据路径的键名 |
-| `output_answer_key` | `str` | `timestamps` | 输出语音片段时间戳列表的键名 |
+## `init`参数说明
+| 参数 | 类型 | 默认值 | 描述 |
+| --- | --- | --- | --- |
+| `repo_or_dir` | `str` | `snakers4/silero-vad` | 模型的存储仓库或本地仓库。 |
+| `source` | `str` | `github` | 模型的来源，可选值为 `github` 或 `local`。 |
+| `device` | `Union[str, List[str]]` | `cuda` | 模型运行的设备，可选值为 `cuda` 或 `cpu`，也可以选择传入列表，如`["cuda:0", "cuda:1"]`，表示在多个GPU上初始化多个模型并行运行。 |
+| `num_workers` | `int` | `1` | 算子并行数，初始化`num_workers`个模型，依次分配在`device`参数指定的设备上。当`num_workers`初始化数量大于设备数量时，会自动在每个设备上初始化多个模型并发运行。如：指定设备为`["cuda:0", "cuda:1"]`，`num_workers`为4，则会在`cuda:0`上初始化两个模型，在`cuda:1`上初始化两个模型。 |
 | `threshold` | `float` | `0.5` | 语音活动检测阈值，用于判断是否为语音活动区域 |
 | `use_min_cut` | `bool` | `False` | 使用min-cut算法对过长的语音活动区域进行分割，在语音窗口大小的后半段寻找时间戳分数最低的位置进行切分，避免当语音活动区域过长时，直接在窗口结束位置切分 |
 | `sampling_rate` | `int` | `16000` | 音频采样率，必须为16000 |
@@ -70,6 +49,28 @@ def run(
 | `neg_threshold` | `Optional[float]` | `None` | 负阈值，表示退出语音状态的阈值。`None` 时自动设为 `max(threshold - 0.15, 0.01)`。较低可减少抖动，较高会更敏感地结束语音段。 |
 | `min_silence_at_max_speech` | `float`| `0.098` | 当语音活动区域超过`max_speech_duration_s`时，允许的最大静音时长（秒）。当语音段过长（超过 `max_speech_duration_s`）时，程序会先尝试“正常静音切分”，失败了再看要不要用 min-cut 方式。 |
 | `use_max_poss_sil_at_max_speech` | `bool` | `True` | 达到 `max_speech_duration_s` 时，若存在多个候选静音，是否选择最长的那个作为切分点 |
+
+注意：Silero VAD模型使用Github仓库的权重加载，而非huggingface仓库。
+
+## `run`函数
+```python
+def run(
+    self,
+    storage: DataFlowStorage,
+    input_audio_key: str = "audio",
+    output_answer_key: str = "timestamps",           
+    )
+```
+执行算子主逻辑，从存储中读取输入 DataFrame，调用 Silero VAD 模型生成语音片段时间戳，并将结果写回存储。
+
+
+参数
+| 参数名 | 类型 | 默认值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `storage` | `DataFlowStorage` | **必填** | 输入输出数据存储 |
+| `input_audio_key` | `str` | `audio` | 输入音频数据路径的键名 |
+| `output_answer_key` | `str` | `timestamps` | 输出语音片段时间戳列表的键名 |
+
 
 ## 🧠 示例用法
 
@@ -91,13 +92,6 @@ class SileroVADGeneratorEval:
             source="local",
             device=['cuda:0'],
             num_workers=1,
-        )
-    
-    def forward(self):
-        self.silero_vad_generator.run(
-            storage=self.storage.step(),
-            input_audio_key='audio',
-            output_answer_key='timestamps',
             threshold=0.5,
             use_min_cut=False,
             sampling_rate=16000,
@@ -111,6 +105,13 @@ class SileroVADGeneratorEval:
             window_size_samples=512,
             min_silence_at_max_speech=98,
             use_max_poss_sil_at_max_speech=True,
+        )
+    
+    def forward(self):
+        self.silero_vad_generator.run(
+            storage=self.storage.step(),
+            input_audio_key='audio',
+            output_answer_key='timestamps',
         )
 
     
