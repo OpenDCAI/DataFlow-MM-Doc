@@ -84,7 +84,7 @@ python context_vqa_pipeline.py \
 ]
 
 ```
-
+示例图片可以在`https://huggingface.co/datasets/OpenDCAI/dataflow-demo-image/tree/main/capsbench_images`中找到
 ### 2. **核心算子逻辑**
 
 该流水线通过串联两个核心算子来完成任务：

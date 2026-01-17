@@ -85,7 +85,7 @@ Data is managed via `FileStorage`, which supports resuming from checkpoints.
 ]
 
 ```
-
+Example images can be found at` https://huggingface.co/datasets/OpenDCAI/dataflow-demo-image/tree/main/capsbench_images `Found in
 ### 2. **Core Operator Logic**
 
 The pipeline chains two core operators to complete the task:
