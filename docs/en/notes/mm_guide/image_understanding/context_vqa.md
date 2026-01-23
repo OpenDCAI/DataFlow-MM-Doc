@@ -72,18 +72,9 @@ Data is managed via `FileStorage`, which supports resuming from checkpoints.
 
 **Input Data Example**:
 
-```json
-[
-    {
-        "id": 1,
-        "image": "./images/landmark.jpg"
-    },
-    {
-        "id": 2,
-        "image": "./images/animal.jpg"
-    }
-]
-
+```jsonl
+{"id": 1, "image": "./images/landmark.jpg"}
+{"id": 2, "image": "./images/animal.jpg"}
 ```
 Example images can be found at` https://huggingface.co/datasets/OpenDCAI/dataflow-demo-image/tree/main/capsbench_images `Found in
 ### 2. **Core Operator Logic**
