@@ -1,7 +1,7 @@
 ---
 title: ContextVQA 多模态问答数据生成流水线
 icon: mdi:image-text
-createTime: 2025/06/16 14:30:00
+createTime: 2026/01/24 15:37:37
 permalink: /zh/mm_guide/contextvqa_pipeline/
 ---
 ## 1. 概述
@@ -75,7 +75,7 @@ python context_vqa_pipeline.py \
 {"id": 1, "image": "./images/landmark.jpg"}
 {"id": 2, "image": "./images/animal.jpg"}
 ```
-示例图片可以在`https://huggingface.co/datasets/OpenDCAI/dataflow-demo-image/tree/main/capsbench_images`中找到
+示例图片可以在`https://huggingface.co/datasets/OpenDCAI/dataflow-demo-image/tree/main/capsbench_images`中找到；此外我们已经合成了20w高质量context vqa数据供社区使用体验，在https://huggingface.co/datasets/OpenDCAI/dataflow-mm-context_vqa中。
 ### 2. **核心算子逻辑**
 
 该流水线通过串联两个核心算子来完成任务：

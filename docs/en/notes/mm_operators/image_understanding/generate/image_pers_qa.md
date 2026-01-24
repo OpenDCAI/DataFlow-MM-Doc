@@ -1,30 +1,21 @@
 ---
 title: PersQAGenerator
-createTime: 2025/10/15 18:20:00
-# icon: material-symbols-light:quiz
+createTime: 2026/01/24 15:37:37
 permalink: /en/mm_operators/generate/image_pers_qa/
 ---
 
 ## 📘 Overview
 
-`PersQAGenerator` is an operator designed to **generate personalized image Question-Answer (QA) pairs based on large vision-language models (VLMs)**.  
-It performs the following steps:
+`PersQAGenerator` is an operator designed for **generating personalized image Question-Answering (QA) pairs based on Large Vision-Language Models (VLM)**.  
+This operator focuses on "character-centric" QA generation: it automatically assigns a name tag (default is `<mam>`) to the main character in an image, randomly selects questions from a predefined pool, and constrains the model to begin its response with the character's tag.
 
-  * Automatically assigns a name tag to the main character in the image (hardcoded as `<mam>` in the implementation).
-  * Randomly selects an appropriate question from predefined templates.
-  * Guides the VLM to start the answer with the character's name tag.
-  * Outputs structured QA pairs, suitable for multimodal QA dataset construction and character role understanding evaluation.
+**Key Features:**
+* **Identity Anchoring**: Automatically assigns the `<mam>` tag to the main protagonist for personalized reference.
+* **Template Driven**: Built-in `PersQAGeneratorPrompt` automatically constructs system prompts and question templates.
+* **Dynamic Injection**: Automatically modifies the conversation context during the `run` process, eliminating the need to manually construct questions.
+* **Structured Output**: Produces character-aligned responses suitable for evaluating character-centric multimodal model performance.
 
-**Features:**
-
-  * Supports generating personalized QA for specific characters in images.
-  * Automatically assigns name tags (e.g., `<mam>`) to the main subject.
-  * Randomly selects relevant questions from predefined templates.
-  * Requires the model to start answers with the main character's name tag.
-  * Supports batch processing of multiple images.
-  * Output includes the complete Question-Answer pair in the format: `Question: ..., Answer: ...`.
-
------
+---
 
 ## 🏗️ `__init__` Function
 
@@ -34,15 +25,18 @@ def __init__(
     llm_serving: LLMServingABC
 ):
     ...
+
 ```
 
-## 🧾 `__init__` Parameters
+### 🧾 `__init__` Parameter Description
 
-| Parameter     | Type            | Default | Description                                                     |
-| :------------ | :-------------- | :------ | :-------------------------------------------------------------- |
-| `llm_serving` | `LLMServingABC` | -       | **Model Serving Object** used to call the VLM for QA generation |
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `llm_serving` | `LLMServingABC` | - | **Model serving object**, used to call the VLM for inference |
 
------
+> **Note**: The operator internally initializes `PersQAGeneratorPrompt` and configures the `system_prompt`, so users do not need to provide them manually.
+
+---
 
 ## ⚡ `run` Function
 
@@ -50,23 +44,29 @@ def __init__(
 def run(
     self,
     storage: DataFlowStorage,
-    input_modal_key: str = "image",
+    input_modal_key: str = "image", 
     output_key: str = "output"
 ):
     ...
+
 ```
 
-The `run` function executes the main QA generation logic: read image paths → construct questions and prompts → call the model → return structured QA results.
+The main logic of the `run` operator:
 
-## 🧾 `run` Parameters
+1. Reads data from storage.
+2. Automatically generates a personalized question containing the `<mam>` tag.
+3. **Data Rewriting**: Fills the generated Prompt into the `conversation` field.
+4. Calls the model to generate a response starting with `<mam>` and saves it in the `output_key`.
 
-| Parameter         | Type              | Default     | Description                                                          |
-| :---------------- | :---------------- | :---------- | :------------------------------------------------------------------- |
-| `storage`         | `DataFlowStorage` | -           | Dataflow storage object                                              |
-| `input_modal_key` | `str`             | `"image"`   | **Multimodal Input Field Name** (image path)                         |
-| `output_key`      | `str`             | `"output"`  | **Model Output Field Name** (personalized QA text, defaults to `output`) |
+### 🧾 `run` Parameter Description
 
------
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `storage` | `DataFlowStorage` | - | Dataflow unified data storage object |
+| `input_modal_key` | `str` | `"image"` | **Image field name** |
+| `output_key` | `str` | `"output"` | **Field name for the generated personalized answer** |
+
+---
 
 ## 🧠 Example Usage
 
@@ -75,56 +75,76 @@ from dataflow.utils.storage import FileStorage
 from dataflow.serving.local_model_vlm_serving import LocalModelVLMServing_vllm
 from dataflow.operators.core_vision import PersQAGenerator
 
-# Step 1: Launch local model service
-serving = LocalModelVLMServing_vllm(
+# 1. Initialize the inference engine
+model = LocalModelVLMServing_vllm(
     hf_model_name_or_path="Qwen/Qwen2.5-VL-3B-Instruct",
     vllm_tensor_parallel_size=1,
-    vllm_temperature=0.7,
-    vllm_top_p=0.9,
-    vllm_max_tokens=512
 )
 
-# Step 2: Set up storage
+# 2. Initialize the operator (Prompt templates handled internally)
+generator = PersQAGenerator(llm_serving=model)
+
+# 3. Prepare data
 storage = FileStorage(
-    first_entry_file_name="dataflow/example/Image2TextPipeline/test_image2caption.jsonl",
+    first_entry_file_name="./sample_data.json", 
     cache_path="./cache_local",
-    file_name_prefix="pers_qa",
-    cache_type="jsonl",
+    file_name_prefix="pers_qa_res",
+    cache_type="json",
 )
 storage.step()
 
-# Step 3: Initialize and run the operator
-generator = PersQAGenerator(serving)
+# 4. Execute generation
 generator.run(
     storage=storage,
     input_modal_key="image",
     output_key="pers_qa"
 )
+
 ```
 
------
+---
 
-## 🧾 Default Output Format
-
-| Field     | Type        | Description                                                          |
-| :-------- | :---------- | :------------------------------------------------------------------- |
-| `image`   | `List[str]` | Input image paths                                                    |
-| `pers_qa` | `str`       | Generated personalized QA pair text, format: `Question: ..., Answer: ...` |
-
------
+## 🧾 Data Flow Examples
 
 ### 📥 Example Input
 
-```jsonl
-{"image": ["./test/example1.jpg"]}
-{"image": ["./test/example2.jpg"]}
+Note: The initial `value` in the `conversation` field will be automatically overwritten by the operator with the generated personalized Prompt.
+
+```json
+[
+    {
+        "source":["[https://huggingface.co/datasets/.../0.png](https://huggingface.co/datasets/.../0.png)"],
+        "image": ["./dataflow/example/test_data/0.png"],
+        "conversation": [
+            {
+                "from": "human",
+                "value": "Any content, will be automatically overwritten later"
+            }
+        ]
+    }
+]
+
 ```
 
 ### 📤 Example Output
 
-```jsonl
-{"image": ["./test/example1.jpg"], "pers_qa": "Question: <mam> is doing what?, Answer: <mam> is smiling at the camera."}
-{"image": ["./test/example2.jpg"], "pers_qa": "Question: Where is <mam>?, Answer: <mam> is in a cafe."}
+The operator automatically constructs the required instructions in the `conversation` field and returns the model's personalized answer in the `pers_qa` field.
+
+```json
+[
+  {
+    "source":["[https://huggingface.co/datasets/.../0.png](https://huggingface.co/datasets/.../0.png)"],
+    "image":["./dataflow/example/test_data/0.png"],
+    "conversation":[
+      {
+        "from":"human",
+        "value":"The name of the main character in the image is <mam>. You need to answer a question about <mam>.\nQuestion: How would you describe <mam>'s attire? Please answer starting with <mam>!\nAnswer: "
+      }
+    ],
+    "pers_qa":"<mam> is dressed in a formal black suit with a white bow tie, exuding a sophisticated and elegant appearance."
+  }
+]
+
 ```
 
-> **Tips:** Using a stronger Multimodal Large Language Model (MLLM) can ensure more accurate format generation.
+> **Tips**: The identifier `<mam>` is hardcoded within the operator (but can be customized in the source). It is recommended to use high-performance MLLMs to ensure the model strictly follows the constraint of starting the response with the specified tag.

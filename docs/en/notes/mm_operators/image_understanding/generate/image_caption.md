@@ -1,19 +1,18 @@
 ---
 title: ImageCaptionGenerator
-createTime: 2025/10/15 15:00:00
-# icon: material-symbols-light:image
+createTime: 2026/01/24 15:37:37
 permalink: /en/mm_operators/generate/image_caption/
 ---
 
 ## 📘 Overview
 
-`ImageCaptionGenerator` is an operator designed to **automatically generate image captions using large vision-language models (VLMs)**.  
-Given input images, it constructs prompts to guide the model in producing high-quality scene or object descriptions. This is suitable for multimodal annotation, dataset construction, and image-text matching tasks.
+`ImageCaptionGenerator` is an operator designed to **automatically generate image descriptions (captions) using Large Vision-Language Models (VLM)**.  
+It wraps `PromptedVQAGenerator` and produces high-quality, structured scene descriptions based on input images and preset system prompts. This operator is widely used for multimodal data annotation, automatic summary generation, and dataset construction.
 
-**Features:**
-* Supports batch processing of multiple images.
-* Generates high-quality descriptions using VLMs like Qwen.
-* Automatically handles image input and prompt construction.
+**Key Features:**
+* **Batch Processing**: Supports streaming or batch caption generation for large-scale image datasets.
+* **Flexible Configuration**: Allows custom `system_prompt` to control text style (e.g., concise, detailed, or specific formats).
+* **Strong Compatibility**: Based on the `LLMServingABC` interface, it supports both local models deployed via vLLM and API services using OpenAI-compatible formats (such as DashScope, GPT-4o, etc.).
 
 ---
 
@@ -22,18 +21,21 @@ Given input images, it constructs prompts to guide the model in producing high-q
 ```python
 def __init__(
     self,
-    llm_serving: LLMServingABC
+    llm_serving: LLMServingABC,
+    system_prompt: str
 ):
     ...
+
 ```
 
-## 🧾 `__init__` Parameters
+### 🧾 `__init__` Parameter Description
 
-| Parameter     | Type            | Default | Description                                                     |
-| :------------ | :-------------- | :------ | :-------------------------------------------------------------- |
-| `llm_serving` | `LLMServingABC` | -       | **Model Serving Object** used to call the VLM for caption generation |
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `llm_serving` | `LLMServingABC` | - | **Model serving object**, supports local GPU loading or remote API call instances |
+| `system_prompt` | `str` | - | **System prompt**, defines the generator's role and output requirements (e.g., "generate a concise caption") |
 
------
+---
 
 ## ⚡ `run` Function
 
@@ -41,80 +43,150 @@ def __init__(
 def run(
     self,
     storage: DataFlowStorage,
-    input_modal_key: str = "image",
+    input_modal_key: str = "image", 
     output_key: str = "output"
 ):
     ...
+
 ```
 
-The `run` function executes the main caption generation workflow:
-read image paths → **validate DataFrame** → construct prompts → call the model → generate text captions → write results to output.
+### 🧾 `run` Parameter Description
 
-## 🧾 `run` Parameters
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `storage` | `DataFlowStorage` | - | Dataflow unified data storage object |
+| `input_modal_key` | `str` | `"image"` | **Image field name**, specifies the key where image paths are stored |
+| `output_key` | `str` | `"output"` | **Output field name**, specifies the key where generated captions will be stored |
 
-| Parameter         | Type              | Default     | Description                                           |
-| :---------------- | :---------------- | :---------- | :---------------------------------------------------- |
-| `storage`         | `DataFlowStorage` | -           | Dataflow storage object                               |
-| `input_modal_key` | `str`             | `"image"`   | **Multimodal Input Field Name** (e.g., image paths)   |
-| `output_key`      | `str`             | `"output"`  | **Model Output Field Name** (the generated description text) |
-
------
+---
 
 ## 🧠 Example Usage
+
+### Option A: Using Local Deployment (Local vLLM)
+
+Best for users with local GPU resources.
 
 ```python
 from dataflow.utils.storage import FileStorage
 from dataflow.serving.local_model_vlm_serving import LocalModelVLMServing_vllm
 from dataflow.operators.core_vision import ImageCaptionGenerator
 
-# Step 1: Launch local model service
-serving = LocalModelVLMServing_vllm(
+# 1. Initialize model serving (e.g., Qwen2.5-VL)
+model = LocalModelVLMServing_vllm(
     hf_model_name_or_path="Qwen/Qwen2.5-VL-3B-Instruct",
     vllm_tensor_parallel_size=1,
-    vllm_temperature=0.7,
-    vllm_top_p=0.9,
-    vllm_max_tokens=512
+    vllm_max_tokens=512,
 )
 
-# Step 2: Prepare input data
+# 2. Initialize operator and set system prompt
+caption_generator = ImageCaptionGenerator(
+    llm_serving=model,
+    system_prompt="You are a image caption generator. Your task is to generate a concise and informative caption for the given image content.",
+)
+
+# 3. Prepare input data
 storage = FileStorage(
-    first_entry_file_name="dataflow/example/image_to_text_pipeline/capsbench_captions.jsonl",
+    first_entry_file_name="./capsbench_captions.json", 
     cache_path="./cache_local",
-    file_name_prefix="dataflow_cache_step",
-    cache_type="jsonl",
+    file_name_prefix="caption_task",
+    cache_type="json",
 )
-storage.step() # Load data
+storage.step()  # Load data into memory
 
-# Step 3: Initialize and run the operator
-generator = ImageCaptionGenerator(serving)
-generator.run(
+# 4. Execute operator
+caption_generator.run(
     storage=storage,
     input_modal_key="image",
-    output_key="caption" # Explicitly specifying output field as "caption" in the example
+    output_key="caption"
 )
+
 ```
 
------
+### Option B: Using Online API Service (OpenAI Compatible)
 
-## 🧾 Default Output Format
+Best for cloud-based models like Alibaba DashScope, GPT-4o, etc. Other operators or pipelines in the project can also use similar API model configurations.
 
-| Field     | Type        | Description                  |
-| :-------- | :---------- | :--------------------------- |
-| `image`   | `List[str]` | Input image paths            |
-| `caption` | `str`       | Generated image caption text |
+```python
+import os
+from dataflow.utils.storage import FileStorage
+from dataflow.serving.api_vlm_serving_openai import APIVLMServing_openai
+from dataflow.operators.core_vision import ImageCaptionGenerator
 
------
+# Set API Key environment variable
+os.environ["DF_API_KEY"] = "your api-key"
 
-### 📥 Example Input
+# 1. Initialize API serving object (e.g., Qwen via DashScope)
+api_serving = APIVLMServing_openai(
+  api_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+  key_name_of_api_key="DF_API_KEY",
+  model_name="qwen3-vl-8b-instruct",
+  image_io=None,
+  send_request_stream=False,
+  max_workers=10,
+  timeout=1800
+)
 
-```jsonl
-{"image": ["./test/example1.jpg"]}
-{"image": ["./test/example2.jpg"]}
+# 2. Initialize operator
+caption_generator = ImageCaptionGenerator(
+    llm_serving=api_serving,
+    system_prompt="You are a image caption generator. Your task is to generate a concise and informative caption.",
+)
+
+# 3. Prepare input data
+storage = FileStorage(
+    first_entry_file_name="./capsbench_captions.json", 
+    cache_path="./cache_local",
+    file_name_prefix="caption_task",
+    cache_type="json",
+)
+storage.step()  # Load data into memory
+
+# 4. Execute operator
+caption_generator.run(
+    storage=storage,
+    input_modal_key="image",
+    output_key="caption"
+)
+
 ```
 
-### 📤 Example Output
+---
 
-```jsonl
-{"image": ["./test/example1.jpg"], "caption": "A young woman is standing on a city street and smiling."}
-{"image": ["./test/example2.jpg"], "caption": "A cat is lying on the windowsill, with blue sky and white clouds outside."}
+## 🧾 Data Flow Examples
+
+### 📥 Example Input (Input)
+
+```json
+[
+  {
+    "source":["[https://huggingface.co/datasets/OpenDCAI/dataflow-demo-image/resolve/main/capsbench_images/0.png](https://huggingface.co/datasets/OpenDCAI/dataflow-demo-image/resolve/main/capsbench_images/0.png)"],
+    "image": ["./dataflow/example/test_data/0.png"],
+    "conversation": [
+      {
+        "from": "human",
+        "value": "Please describe the image in detail."
+      }
+    ]
+  }
+]
+
+```
+
+### 📤 Example Output (Output)
+
+```json
+[
+  {
+    "source":["[https://huggingface.co/datasets/OpenDCAI/dataflow-demo-image/resolve/main/capsbench_images/0.png](https://huggingface.co/datasets/OpenDCAI/dataflow-demo-image/resolve/main/capsbench_images/0.png)"],
+    "image": ["./dataflow/example/test_data/0.png"],
+    "conversation": [
+      {
+        "from": "human",
+        "value": "Please describe the image in detail."
+      }
+    ],
+    "caption": "This is a black-and-white movie poster for the film *Nightmare Alley*. The central focus is a dramatic portrait of actor Bradley Cooper. He is dressed in formal attire... The overall design uses stark monochrome tones to create a suspenseful aesthetic."
+  }
+]
+
 ```

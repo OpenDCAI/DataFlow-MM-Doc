@@ -1,8 +1,10 @@
 ---
-title: Image环境安装
+title: Image Environment Installation
 icon: material-symbols-light:download-rounded
-createTime: 2025/06/09 10:29:31
+createTime: 2026/01/24 15:37:37
 permalink: /en/mm_guide/install_image_understanding/
 ---
-# 安装
-请添加image环境的安装方式
+
+# Installation
+
+Please refer to: [Detailed Guide for Image Environment Installation](/en/mm_operators/install_image_understanding/)

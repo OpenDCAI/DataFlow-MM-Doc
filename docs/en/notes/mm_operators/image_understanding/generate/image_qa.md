@@ -1,41 +1,42 @@
 ---
 title: ImageQAGenerator
-createTime: 2025/10/15 16:00:00
-# icon: material-symbols-light:quiz
+createTime: 2026/01/24 15:37:37
 permalink: /en/mm_operators/generate/image_qa/
 ---
 
 ## 📘 Overview
 
-`ImageQAGenerator` is an operator designed to **automatically generate Question-Answer (QA) pairs based on image content (Visual QA)**.  
-It intelligently proposes relevant questions based on the image scene and generates corresponding reference answers.
+`ImageQAGenerator` is an operator used to **automatically generate question-answer (QA) pairs based on image content (Visual QA)**.  
+By wrapping `PromptedVQAGenerator`, it intelligently proposes reasonable questions and generates reference answers based on the image scene. This operator is a core component for building multimodal datasets, instruction-tuning data, and visual question-answering systems.
 
-**Features:**
+**Key Features:**
+* **Automatic Generation**: Automatically extracts key image information and constructs QA pairs based on Vision-Language Models (VLM).
+* **Batch Processing**: Supports automated annotation for massive volumes of images.
+* **Flexible Prompting**: Define QA styles (such as single-turn, multi-turn, or specific knowledge point extraction) via `system_prompt`.
+* **Context Support**: Automatically handles the construction logic for image inputs and conversation prompts.
 
-  * Supports batch processing of multiple images.
-  * Automatically generates relevant QA pairs using Vision-Language Models (VLMs).
-  * Applicable for Visual QA dataset construction and model training.
-  * Automatically handles image input and QA prompt construction.
-
------
+---
 
 ## 🏗️ `__init__` Function
 
 ```python
 def __init__(
     self,
-    llm_serving: LLMServingABC
+    llm_serving: LLMServingABC,
+    system_prompt: str
 ):
     ...
+
 ```
 
-## 🧾 `__init__` Parameters
+### 🧾 `__init__` Parameter Description
 
-| Parameter     | Type            | Default | Description                                                     |
-| :------------ | :-------------- | :------ | :-------------------------------------------------------------- |
-| `llm_serving` | `LLMServingABC` | -       | **Model Serving Object** used to call the VLM for QA generation |
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `llm_serving` | `LLMServingABC` | - | **Model serving object**, used to call VLM for inference tasks |
+| `system_prompt` | `str` | - | **System prompt**, used to constrain the QA generation logic (e.g., specifying the language or depth of questions) |
 
------
+---
 
 ## ⚡ `run` Function
 
@@ -43,23 +44,24 @@ def __init__(
 def run(
     self,
     storage: DataFlowStorage,
-    input_modal_key: str = "image",
+    input_modal_key: str = "image", 
     output_key: str = "output"
 ):
     ...
+
 ```
 
-The `run` function executes the main operator logic: read image paths → **validate DataFrame** → construct prompts → call the model → generate Visual QA pairs and write them to the output file.
+Main logic of the `run` operator: reads image paths, combines the `system_prompt` with conversation information from the input data, calls the inference backend to generate QA text, and saves the result to the specified `output_key`.
 
-## 🧾 `run` Parameters
+### 🧾 `run` Parameter Description
 
-| Parameter         | Type              | Default     | Description                                                               |
-| :---------------- | :---------------- | :---------- | :------------------------------------------------------------------------ |
-| `storage`         | `DataFlowStorage` | -           | Dataflow storage object                                                   |
-| `input_modal_key` | `str`             | `"image"`   | **Multimodal Input Field Name** (e.g., image paths)                       |
-| `output_key`      | `str`             | `"output"`  | **Output QA Field Name** (defaults to `output`, can be customized)        |
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `storage` | `DataFlowStorage` | - | Dataflow unified data storage object |
+| `input_modal_key` | `str` | `"image"` | **Multimodal input field name** (the Key where the image is located) |
+| `output_key` | `str` | `"output"` | **Field name where the generated QA is stored** |
 
------
+---
 
 ## 🧠 Example Usage
 
@@ -68,61 +70,76 @@ from dataflow.utils.storage import FileStorage
 from dataflow.serving.local_model_vlm_serving import LocalModelVLMServing_vllm
 from dataflow.operators.core_vision import ImageQAGenerator
 
-# Step 1: Launch local model service
-serving = LocalModelVLMServing_vllm(
+# 1. Start model serving
+model = LocalModelVLMServing_vllm(
     hf_model_name_or_path="Qwen/Qwen2.5-VL-3B-Instruct",
     vllm_tensor_parallel_size=1,
-    vllm_temperature=0.7,
-    vllm_top_p=0.9,
-    vllm_max_tokens=1024
+    vllm_max_tokens=512,
 )
 
-# Step 2: Prepare input data
+# 2. Initialize operator and set QA generation rules
+qa_generator = ImageQAGenerator(
+    llm_serving=model,
+    system_prompt="You are a image question-answer generator. Your task is to generate a question-answer pair for the given image content.",
+)
+
+# 3. Prepare data
 storage = FileStorage(
-    first_entry_file_name="dataflow/example/Image2TextPipeline/test_image2qa.jsonl",
+    first_entry_file_name="./capsbench_qas.json",
     cache_path="./cache_local",
-    file_name_prefix="imageqa",
-    cache_type="jsonl",
+    file_name_prefix="qa_task",
+    cache_type="json",
 )
 storage.step() # Load data
 
-# Step 3: Initialize and run the operator
-qa_generator = ImageQAGenerator(serving)
+# 4. Execute
 qa_generator.run(
     storage=storage,
     input_modal_key="image",
-    output_key="qa_pairs" # Explicitly specifying output field as "qa_pairs" in the example
+    output_key="qa"
 )
+
 ```
 
------
+---
 
-## 🧾 Default Output Format
-
-| Field      | Type                     | Description                                                          |
-| :--------- | :--------------------- | :------------------------------------------------------------------- |
-| `image`    | `List[str]`            | Input image paths                                                    |
-| `qa_pairs` | `List[Dict[str, str]]` | Generated QA pairs, containing `question` and `answer` fields        |
-
-> **Note:** The raw output from the model (`output_key`) is typically a single string containing all QA pairs. A subsequent operator (like `JsonParser`) is usually required to structure this output into the `List[Dict[str, str]]` format shown here.
-
------
+## 🧾 Data Flow Examples
 
 ### 📥 Example Input
 
-```jsonl
-{"image": ["./test/street_scene.jpg"]}
+```json
+[
+    {
+        "source":["[https://huggingface.co/datasets/OpenDCAI/dataflow-demo-image/resolve/main/capsbench_images/0.png](https://huggingface.co/datasets/OpenDCAI/dataflow-demo-image/resolve/main/capsbench_images/0.png)"],
+        "image": ["./dataflow/example/test_data/0.png"],
+        "conversation": [
+            {
+                "from": "human",
+                "value": "Please construct a QA pair based on the content in the image."
+            }
+        ]
+    }
+]
+
 ```
 
-### 📤 Example Output (Structured)
+### 📤 Example Output
 
-```jsonl
-{
-  "image": ["./test/street_scene.jpg"],
-  "qa_pairs": [
-    {"question": "How many cars are in the image?", "answer": "Two cars"},
-    {"question": "What is the scene depicted in this photo?", "answer": "A city street"},
-    {"question": "What is the main mode of transportation shown?", "answer": "A car"}
-  ]
-}
+```json
+[
+  {
+    "source":["[https://huggingface.co/datasets/OpenDCAI/dataflow-demo-image/resolve/main/capsbench_images/0.png](https://huggingface.co/datasets/OpenDCAI/dataflow-demo-image/resolve/main/capsbench_images/0.png)"],
+    "image": ["./dataflow/example/test_data/0.png"],
+    "conversation":[
+      {
+        "from":"human",
+        "value":"Please construct a QA pair based on the content in the image."
+      }
+    ],
+    "qa":"**Question:** Who is the main actor in the movie \"Nightmare Alley\"?\n**Answer:** Bradley Cooper is the main actor in the movie \"Nightmare Alley.\""
+  }
+]
+
 ```
+
+> **Note:** The `qa` field typically returns raw text containing Markdown formatting. If you need to further split `Question` and `Answer` into independent fields, it is recommended to use a text parsing operator in combination.
