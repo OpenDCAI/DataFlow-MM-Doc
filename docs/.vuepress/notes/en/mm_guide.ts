@@ -13,6 +13,7 @@ export const MMGuide: ThemeNote = defineNoteConfig({
             items: [
                 'intro',
                 'framework',
+                'install',
             ],
         },
         {
