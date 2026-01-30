@@ -5,4 +5,11 @@ createTime: 2025/06/09 10:29:31
 permalink: /zh/mm_guide/install_image_understanding/
 ---
 # 安装
-请添加image环境的安装方式，如果需要
+```bash
+conda create -n Dataflow-MM python=3.12
+conda activate DataFlow-MM
+
+cd ./DataFlow-MM
+pip install -e .
+pip install -e ".[vllm]"
+```

@@ -7,9 +7,10 @@ permalink: /zh/mm_guide/install_audio_understanding/
 ## 环境安装
 
 ```bash
-conda create -n myvenv python=3.10
-conda activate myvenv
+conda create -n DataFlow-MM python=3.12
+conda activate DataFlow-MM
 
 cd ./DataFlow-MM
-pip install open-dataflow-mm[audio]
+pip install -e .
+pip install -e ".[audio]"
 ```

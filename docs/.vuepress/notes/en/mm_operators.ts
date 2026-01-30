@@ -22,12 +22,6 @@ export const MMOperators: ThemeNote = defineNoteConfig({
             prefix: 'image_understanding',
             items: [
                 {
-                    text: 'install',
-                    collapsed: false,
-                    prefix: '',
-                    items: ['install_image_understanding'],
-                },
-                {
                     text: "generate",
                     collapsed: false,
                     prefix: 'generate/',
@@ -95,12 +89,6 @@ export const MMOperators: ThemeNote = defineNoteConfig({
             prefix: 'video_understanding',
             items: [
                 {
-                    text: 'Install',
-                    collapsed: false,
-                    prefix: '',
-                    items: ['install_video_understanding'],
-                },
-                {
                     text: "generate",
                     collapsed: false,
                     prefix: 'generate/',
@@ -152,12 +140,6 @@ export const MMOperators: ThemeNote = defineNoteConfig({
             // ],
             items: [
                 {
-                    text: '安装',
-                    collapsed: false,
-                    prefix: '',
-                    items: ['install_audio_understanding'],
-                },
-                {
                     text: "generate",
                     collapsed: false,
                     prefix: 'generate/',
@@ -192,15 +174,15 @@ export const MMOperators: ThemeNote = defineNoteConfig({
                 }
             ],
         },
-        {
-            text: 'Dataflow Generation',
-            collapsed: false,
-            icon: 'carbon:idea',
-            prefix: 'image_video_generation',
-            items: [
-                'install_image_video_generation',
-                'image_generation',
-            ],
-        },
+        // {
+        //     text: 'Dataflow Generation',
+        //     collapsed: false,
+        //     icon: 'carbon:idea',
+        //     prefix: 'image_video_generation',
+        //     items: [
+        //         'install_image_video_generation',
+        //         'image_generation',
+        //     ],
+        // },
     ]
 })
