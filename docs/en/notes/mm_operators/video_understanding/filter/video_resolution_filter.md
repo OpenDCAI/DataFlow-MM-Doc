@@ -43,11 +43,13 @@ def run(
     self,
     storage: DataFlowStorage,
     video_key: str = "video_path"
-):
+) -> list[str]:
     ...
 ```
 
 Executes the main logic: reads data from storage, calculates video resolution for each row, retains only samples within the specified resolution range, and writes back to storage.
+
+**Returns:** `list[str]` - List of output field names, containing `["video_width", "video_height", "passed_filter"]`
 
 ## 🧾 `run` Parameters
 

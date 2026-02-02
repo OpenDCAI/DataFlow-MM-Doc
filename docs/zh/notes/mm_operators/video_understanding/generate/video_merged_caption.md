@@ -77,7 +77,6 @@ storage = FileStorage(
     file_name_prefix="merged_caption",
     cache_type="json",
 )
-storage.step()
 
 # Step 2: 初始化并运行算子
 merged_caption_generator = VideoMergedCaptionGenerator(
@@ -87,7 +86,7 @@ merged_caption_generator = VideoMergedCaptionGenerator(
     timestamp_end_key="timestamp_end",
 )
 merged_caption_generator.run(
-    storage=storage,
+    storage=storage.step(),
 )
 ```
 

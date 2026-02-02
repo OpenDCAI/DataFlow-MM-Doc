@@ -96,7 +96,6 @@ export const MMOperators: ThemeNote = defineNoteConfig({
                         'video_caption',
                         'video_merged_caption',
                         'video_qa',
-                        'video_cotqa',
                         'video_clip'
                     ]
                 },
@@ -122,8 +121,10 @@ export const MMOperators: ThemeNote = defineNoteConfig({
                         'video_clip_filter',
                         'video_info_filter',
                         'video_scene_filter',
-                        'video_score_filter',
                         'video_frame_filter',
+                        'video_aesthetic_filter',
+                        'video_luminance_filter',
+                        'video_ocr_filter',
                     ]
                 },
             ],

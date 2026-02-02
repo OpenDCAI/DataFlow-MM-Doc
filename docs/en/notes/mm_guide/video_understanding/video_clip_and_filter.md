@@ -22,13 +22,12 @@ The main stages of the pipeline include:
 
 1. **Video Info Extraction**: Extract basic video information (resolution, FPS, duration, etc.).
 2. **Scene Detection**: Intelligently segment videos based on scene changes.
-3. **Clip Metadata Generation**: Generate metadata for each scene clip.
+3. **Clip Metadata Generation and Basic Filtering**: Generate metadata for each scene clip and perform basic filtering (frames, FPS, resolution).
 4. **Frame Extraction**: Extract representative frames from each clip.
-5. **Aesthetic Scoring**: Evaluate the aesthetic quality of video clips.
-6. **Luminance Evaluation**: Analyze the brightness distribution of video clips.
-7. **OCR Analysis**: Detect text content in videos.
-8. **Quality Filtering**: Filter low-quality clips based on multi-dimensional scores.
-9. **Video Cutting and Saving**: Save high-quality video clips.
+5. **Aesthetic Scoring and Filtering**: Evaluate the aesthetic quality of video clips and filter low-score clips.
+6. **Luminance Evaluation and Filtering**: Analyze the brightness distribution and filter clips with abnormal brightness.
+7. **OCR Analysis and Filtering**: Detect text content and filter clips with excessive text.
+8. **Video Cutting and Saving**: Save high-quality video clips.
 
 ---
 
@@ -42,36 +41,32 @@ cd run_dataflow_mm
 
 ### Step 2: Initialize DataFlow-MM
 ```bash
-dataflow init
+dataflowmm init
 ```
 You will see:
 ```bash
-run_dataflow_mm/pipelines/gpu_pipelines/video_clip_and_filter_pipeline.py  
+run_dataflow_mm/gpu_pipelines/video_clip_and_filter_pipeline.py  
 ```
 
-### Step 3: Configure model paths and filter parameters
+### Step 3: Configure model paths
 
-In `video_clip_and_filter_pipeline.py`, configure the aesthetic scoring model and filter thresholds:
+In `video_clip_and_filter_pipeline.py`, configure the required model paths. After opening the file, you need to modify the following paths:
 
 ```python
-generator = VideoFilteredClipGenerator(
-    clip_model="/path/to/ViT-L-14.pt",              # CLIP model path
-    mlp_checkpoint="/path/to/sac+logos+ava1-l14-linearMSE.pth",  # MLP checkpoint
-    aes_min=4,                                       # Minimum aesthetic score
-    ocr_max=0.3,                                     # Maximum OCR ratio
-    lum_min=20,                                      # Minimum luminance
-    lum_max=140,                                     # Maximum luminance
-    motion_min=2,                                    # Minimum motion score
-    motion_max=14,                                   # Maximum motion score
-    strict_mode=False,                               # Strict mode
-    seed=42,                                         # Random seed
-    video_save_dir="./cache/video_clips",           # Video save directory
-)
+# Configure aesthetic scoring model in VideoAestheticFilter
+clip_model="/path/to/ViT-L-14.pt",  # Download from https://openaipublic.azureedge.net/clip/models/.../ViT-L-14.pt
+mlp_checkpoint="/path/to/sac+logos+ava1-l14-linearMSE.pth",  # Download from https://github.com/christophschuhmann/improved-aesthetic-predictor
+
+# Configure OCR model in VideoOCRFilter
+det_model_dir="/path/to/PP-OCRv5_server_det",  # PaddleOCR detection model
+rec_model_dir="/path/to/PP-OCRv5_server_rec",  # PaddleOCR recognition model
 ```
+
+You can also adjust filtering parameters for each operator as needed, such as aesthetic threshold `aes_min`, luminance range `lum_min/lum_max`, OCR ratio `ocr_max`, etc.
 
 ### Step 4: One-click run
 ```bash
-python pipelines/gpu_pipelines/video_clip_and_filter_pipeline.py
+python gpu_pipelines/video_clip_and_filter_pipeline.py
 ```
 
 You can adjust filter parameters based on your needs. Below we introduce each step in the pipeline and parameter configuration in detail.
@@ -145,16 +140,23 @@ self.video_scene_filter = VideoSceneFilter(
 )
 ```
 
-#### Step 3: Clip Metadata Generation (VideoClipFilter)
+#### Step 3: Clip Metadata Generation and Basic Filtering (VideoClipFilter)
 
 **Functionality:**
 * Generate detailed metadata for each scene clip
+* Filter clips based on basic properties (frames, FPS, resolution)
 
 **Input:** Video info and scene info  
 **Output:** Clip metadata
 
 ```python
-self.video_clip_filter = VideoClipFilter()
+self.video_clip_filter = VideoClipFilter(
+    frames_min=None,           # Minimum frames
+    frames_max=None,           # Maximum frames
+    fps_min=None,              # Minimum FPS
+    fps_max=None,              # Maximum FPS
+    resolution_max=None,       # Maximum resolution
+)
 ```
 
 #### Step 4: Frame Extraction (VideoFrameFilter)
@@ -171,85 +173,62 @@ self.video_frame_filter = VideoFrameFilter(
 )
 ```
 
-#### Step 5: Aesthetic Scoring (VideoAestheticEvaluator)
+#### Step 5: Aesthetic Scoring and Filtering (VideoAestheticFilter)
 
 **Functionality:**
 * Evaluate the aesthetic quality of video clips using CLIP + MLP model
+* Automatically filter clips below the threshold
 * Score range typically 0-10
 
 **Input:** Extracted frame images  
-**Output:** Aesthetic scores
+**Output:** Aesthetic scores and filtered clips
 
 ```python
-self.video_aesthetic_evaluator = VideoAestheticEvaluator(
+self.video_aesthetic_filter = VideoAestheticFilter(
     figure_root="./cache/extract_frames",
     clip_model="/path/to/ViT-L-14.pt",
     mlp_checkpoint="/path/to/sac+logos+ava1-l14-linearMSE.pth",
+    aes_min=4,  # Minimum aesthetic score threshold
 )
 ```
 
-#### Step 6: Luminance Evaluation (VideoLuminanceEvaluator)
+#### Step 6: Luminance Evaluation and Filtering (VideoLuminanceFilter)
 
 **Functionality:**
 * Calculate average luminance of video clips
-* Filter videos that are too dark or too bright
+* Automatically filter videos that are too dark or too bright
 
 **Input:** Extracted frame images  
-**Output:** Luminance statistics
+**Output:** Luminance statistics and filtered clips
 
 ```python
-self.video_luminance_evaluator = VideoLuminanceEvaluator(
+self.video_luminance_filter = VideoLuminanceFilter(
     figure_root="./cache/extract_frames",
+    lum_min=20,   # Minimum luminance threshold
+    lum_max=140,  # Maximum luminance threshold
 )
 ```
 
-#### Step 7: OCR Analysis (VideoOCREvaluator)
+#### Step 7: OCR Analysis and Filtering (VideoOCRFilter)
 
 **Functionality:**
 * Detect text content ratio in videos
-* Can be used to filter videos with excessive text (e.g., subtitles, UI)
+* Automatically filter videos with excessive text (e.g., subtitles, UI)
 
 **Input:** Extracted frame images  
-**Output:** OCR score (text ratio)
+**Output:** OCR score (text ratio) and filtered clips
 
 ```python
-self.video_ocr_evaluator = VideoOCREvaluator(
+self.video_ocr_filter = VideoOCRFilter(
     figure_root="./cache/extract_frames",
+    det_model_dir="/path/to/PP-OCRv5_server_det",  # OCR detection model
+    rec_model_dir="/path/to/PP-OCRv5_server_rec",  # OCR recognition model
+    ocr_min=None,   # Minimum OCR ratio (optional)
+    ocr_max=0.3,    # Maximum OCR ratio threshold
 )
 ```
 
-#### Step 8: Quality Filtering (VideoScoreFilter)
-
-**Functionality:**
-* Filter low-quality clips based on multi-dimensional scores
-* Supports various filtering conditions including aesthetic, luminance, OCR, motion, etc.
-
-**Input:** All scoring data  
-**Output:** Filtered clip list
-
-```python
-self.video_score_filter = VideoScoreFilter(
-    frames_min=None,           # Minimum number of frames
-    frames_max=None,           # Maximum number of frames
-    fps_min=None,              # Minimum FPS
-    fps_max=None,              # Maximum FPS
-    resolution_max=None,       # Maximum resolution
-    aes_min=4,                 # Minimum aesthetic score
-    ocr_min=None,              # Minimum OCR score
-    ocr_max=0.3,               # Maximum OCR score
-    lum_min=20,                # Minimum luminance
-    lum_max=140,               # Maximum luminance
-    motion_min=2,              # Minimum motion score
-    motion_max=14,             # Maximum motion score
-    flow_min=None,             # Minimum flow score
-    flow_max=None,             # Maximum flow score
-    blur_max=None,             # Maximum blur score
-    strict_mode=False,         # Strict mode
-    seed=42,                   # Random seed
-)
-```
-
-#### Step 9: Video Cutting and Saving (VideoClipGenerator)
+#### Step 8: Video Cutting and Saving (VideoClipGenerator)
 
 **Functionality:**
 * Cut and save videos based on filtered clip information
@@ -316,95 +295,65 @@ from dataflow.operators.core_vision import VideoInfoFilter
 from dataflow.operators.core_vision import VideoSceneFilter
 from dataflow.operators.core_vision import VideoClipFilter
 from dataflow.operators.core_vision import VideoFrameFilter
-from dataflow.operators.core_vision import VideoAestheticEvaluator
-from dataflow.operators.core_vision import VideoLuminanceEvaluator
-from dataflow.operators.core_vision import VideoOCREvaluator
-from dataflow.operators.core_vision import VideoScoreFilter
+from dataflow.operators.core_vision import VideoAestheticFilter
+from dataflow.operators.core_vision import VideoLuminanceFilter
+from dataflow.operators.core_vision import VideoOCRFilter
 from dataflow.operators.core_vision import VideoClipGenerator
 from dataflow.core.Operator import OperatorABC
 from dataflow.utils.storage import FileStorage
 
 class VideoFilteredClipGenerator(OperatorABC):
-    def __init__(
-        self,
-        backend="opencv",
-        ext=False,
-        frame_skip=0,
-        start_remove_sec=0.0,
-        end_remove_sec=0.0,
-        min_seconds=2.0,
-        max_seconds=15.0,
-        frame_output_dir="./cache/extract_frames",
-        clip_model="/path/to/ViT-L-14.pt",
-        mlp_checkpoint="/path/to/sac+logos+ava1-l14-linearMSE.pth",
-        frames_min=None,
-        frames_max=None,
-        fps_min=None,
-        fps_max=None,
-        resolution_max=None,
-        aes_min=4,
-        ocr_min=None,
-        ocr_max=0.3,
-        lum_min=20,
-        lum_max=140,
-        motion_min=2,
-        motion_max=14,
-        flow_min=None,
-        flow_max=None,
-        blur_max=None,
-        strict_mode=False,
-        seed=42,
-        video_save_dir="./cache/video_clips",
-    ):
+    """
+    Complete video processing pipeline operator that integrates all filtering and generation steps.
+    """
+    
+    def __init__(self):
+        """
+        Initialize the VideoFilteredClipGenerator operator with default parameters.
+        """
         # Initialize all sub-operators
         self.video_info_filter = VideoInfoFilter(
-            backend=backend,
-            ext=ext,
+            backend="opencv",
+            ext=False,
         )
         self.video_scene_filter = VideoSceneFilter(
-            frame_skip=frame_skip,
-            start_remove_sec=start_remove_sec,
-            end_remove_sec=end_remove_sec,
-            min_seconds=min_seconds,
-            max_seconds=max_seconds,
+            frame_skip=0,
+            start_remove_sec=0.0,
+            end_remove_sec=0.0,
+            min_seconds=2.0,
+            max_seconds=15.0,
             disable_parallel=True,
         )
-        self.video_clip_filter = VideoClipFilter()
+        self.video_clip_filter = VideoClipFilter(
+            frames_min=None,
+            frames_max=None,
+            fps_min=None,
+            fps_max=None,
+            resolution_max=None,
+        )
         self.video_frame_filter = VideoFrameFilter(
-            output_dir=frame_output_dir,
+            output_dir="./cache/extract_frames",
         )
-        self.video_aesthetic_evaluator = VideoAestheticEvaluator(
-            figure_root=frame_output_dir,
-            clip_model=clip_model,
-            mlp_checkpoint=mlp_checkpoint,
+        self.video_aesthetic_filter = VideoAestheticFilter(
+            figure_root="./cache/extract_frames",
+            clip_model="/path/to/ViT-L-14.pt",
+            mlp_checkpoint="/path/to/sac+logos+ava1-l14-linearMSE.pth",
+            aes_min=4,
         )
-        self.video_luminance_evaluator = VideoLuminanceEvaluator(
-            figure_root=frame_output_dir,
+        self.video_luminance_filter = VideoLuminanceFilter(
+            figure_root="./cache/extract_frames",
+            lum_min=20,
+            lum_max=140,
         )
-        self.video_ocr_evaluator = VideoOCREvaluator(
-            figure_root=frame_output_dir,
-        )
-        self.video_score_filter = VideoScoreFilter(
-            frames_min=frames_min,
-            frames_max=frames_max,
-            fps_min=fps_min,
-            fps_max=fps_max,
-            resolution_max=resolution_max,
-            aes_min=aes_min,
-            ocr_min=ocr_min,
-            ocr_max=ocr_max,
-            lum_min=lum_min,
-            lum_max=lum_max,
-            motion_min=motion_min,
-            motion_max=motion_max,
-            flow_min=flow_min,
-            flow_max=flow_max,
-            blur_max=blur_max,
-            strict_mode=strict_mode,
-            seed=seed,
+        self.video_ocr_filter = VideoOCRFilter(
+            figure_root="./cache/extract_frames",
+            det_model_dir="/path/to/PP-OCRv5_server_det",
+            rec_model_dir="/path/to/PP-OCRv5_server_rec",
+            ocr_min=None,
+            ocr_max=0.3,
         )
         self.video_clip_generator = VideoClipGenerator(
-            video_save_dir=video_save_dir,
+            video_save_dir="./cache/video_clips",
         )
     
     def run(
@@ -413,6 +362,18 @@ class VideoFilteredClipGenerator(OperatorABC):
         input_video_key="video",
         output_key="video",
     ):
+        """
+        Execute the complete video processing pipeline.
+        
+        Args:
+            storage: DataFlow storage object
+            input_video_key: Input video path field name (default: 'video')
+            output_key: Output video path field name (default: 'video')
+            
+        Returns:
+            str: Output key name
+        """
+        
         # Step 1: Extract video info
         self.video_info_filter.run(
             storage=storage.step(),
@@ -428,7 +389,7 @@ class VideoFilteredClipGenerator(OperatorABC):
             output_key="video_scene",
         )
         
-        # Step 3: Generate clip metadata
+        # Step 3: Generate clip metadata and basic filtering
         self.video_clip_filter.run(
             storage=storage.step(),
             input_video_key=input_video_key,
@@ -446,39 +407,31 @@ class VideoFilteredClipGenerator(OperatorABC):
             output_key="video_frame_export",
         )
         
-        # Step 5: Compute aesthetic scores
-        self.video_aesthetic_evaluator.run(
+        # Step 5: Aesthetic scoring and filtering
+        self.video_aesthetic_filter.run(
             storage=storage.step(),
             input_video_key=input_video_key,
             video_clips_key="video_clip",
             output_key="video_clip",
         )
         
-        # Step 6: Compute luminance statistics
-        self.video_luminance_evaluator.run(
+        # Step 6: Luminance evaluation and filtering
+        self.video_luminance_filter.run(
             storage=storage.step(),
             input_video_key=input_video_key,
             video_clips_key="video_clip",
             output_key="video_clip",
         )
         
-        # Step 7: Compute OCR scores
-        self.video_ocr_evaluator.run(
+        # Step 7: OCR analysis and filtering
+        self.video_ocr_filter.run(
             storage=storage.step(),
             input_video_key=input_video_key,
             video_clips_key="video_clip",
             output_key="video_clip",
         )
         
-        # Step 8: Filter based on scores
-        self.video_score_filter.run(
-            storage=storage.step(),
-            input_video_key=input_video_key,
-            video_clips_key="video_clip",
-            output_key="video_clip",
-        )
-        
-        # Step 9: Cut and save videos
+        # Step 8: Cut and save videos
         self.video_clip_generator.run(
             storage=storage.step(),
             video_clips_key="video_clip",
@@ -488,6 +441,7 @@ class VideoFilteredClipGenerator(OperatorABC):
         return output_key
 
 if __name__ == "__main__":
+    # Test the operator
     storage = FileStorage(
         first_entry_file_name="./dataflow/example/video_split/sample_data.json",
         cache_path="./cache",
@@ -495,19 +449,7 @@ if __name__ == "__main__":
         cache_type="json",
     )
     
-    generator = VideoFilteredClipGenerator(
-        clip_model="/path/to/ViT-L-14.pt",
-        mlp_checkpoint="/path/to/sac+logos+ava1-l14-linearMSE.pth",
-        aes_min=4,
-        ocr_max=0.3,
-        lum_min=20,
-        lum_max=140,
-        motion_min=2,
-        motion_max=14,
-        strict_mode=False,
-        seed=42,
-        video_save_dir="./cache/video_clips",
-    )
+    generator = VideoFilteredClipGenerator()
     
     generator.run(
         storage=storage,

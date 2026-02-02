@@ -67,11 +67,13 @@ def run(
     video_key: str = 'video_path',
     candidate_key: str = 'candidate',
     reference_key: str = 'reference'
-):
+) -> list[str]:
     ...
 ```
 
 执行算子主逻辑：从 storage 读取视频路径、候选文本和参考文本，提取视频帧特征，计算 EMScore 评分，并写回存储。
+
+**返回值:** `list[str]` - 输出字段名列表，包含所有计算的评分字段（如 `EMScore(X,X*)_figr_F` 等）及可选的 `frame_details` 字段
 
 ## 🧾 `run` 参数说明
 

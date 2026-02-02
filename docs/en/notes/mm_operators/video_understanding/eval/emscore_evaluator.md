@@ -58,6 +58,34 @@ def __init__(
 
 ---
 
+## ⚡ `run` Function
+
+```python
+def run(
+    self,
+    storage: DataFlowStorage,
+    video_key: str = 'video_path',
+    candidate_key: str = 'candidate',
+    reference_key: str = 'reference'
+) -> list[str]:
+    ...
+```
+
+Execute main logic: reads video paths, candidate text, and reference text from storage, extracts video frame features, computes EMScore, and writes back to storage.
+
+**Returns:** `list[str]` - List of output field names, including all computed score fields (e.g., `EMScore(X,X*)_figr_F`) and optional `frame_details` field
+
+## 🧾 `run` Parameters
+
+| Parameter       | Type              | Default         | Description                       |
+| :-------------- | :---------------- | :-------------- | :-------------------------------- |
+| `storage`       | `DataFlowStorage` | -               | DataFlow storage object            |
+| `video_key`     | `str`             | `"video_path"`  | Field name for video paths         |
+| `candidate_key` | `str`             | `"candidate"`   | Field name for candidate text      |
+| `reference_key` | `str`             | `"reference"`   | Field name for reference text (optional) |
+
+---
+
 ## 🧠 Example Usage
 
 ```python

@@ -35,21 +35,22 @@ cd run_dataflow_mm
 
 ### Step 2: Initialize DataFlow-MM
 ```bash
-dataflow init
+dataflowmm init
 ```
 You will see:
 ```bash
-run_dataflow_mm/pipelines/gpu_pipelines/video_caption_pipeline.py  
+run_dataflow_mm/playground/video_caption_pipeline.py  
 ```
 
-### Step 3: Configure model path
+### Step 3: Configure model path and Prompt
 
-In `video_caption_pipeline.py`, configure the VLM model path:
+In `video_caption_pipeline.py`, configure the VLM model path and prompt template:
 
 ```python
+# VLM model configuration
 self.vlm_serving = LocalModelVLMServing_vllm(
     hf_model_name_or_path="Qwen/Qwen2.5-VL-7B-Instruct",  # Modify to your model path
-    hf_cache_dir="./dataflow_cache",
+    hf_cache_dir='./dataflow_cache',
     vllm_tensor_parallel_size=1,
     vllm_temperature=0.7,
     vllm_top_p=0.9,
@@ -57,14 +58,32 @@ self.vlm_serving = LocalModelVLMServing_vllm(
     vllm_max_model_len=51200,
     vllm_gpu_memory_utilization=0.9
 )
+
+# Prompt Template configuration
+self.prompt_template = VideoCaptionGeneratorPrompt()
+
+# Operator initialization
+self.prompted_vqa_generator = PromptedVQAGenerator(
+    serving=self.vlm_serving,
+    system_prompt="You are a helpful assistant.",
+    prompt_template=self.prompt_template
+)
 ```
 
 ### Step 4: One-click run
 ```bash
-python pipelines/gpu_pipelines/video_caption_pipeline.py
+python playground/video_caption_pipeline.py
 ```
 
-You can also run any other pipeline script as needed; the process is similar. Below we introduce the operators used in the pipeline and how to configure them.
+::: tip API Version
+If you prefer to use an API service instead of a local model, you can use the API version of the pipeline:
+```bash
+python api_pipelines/video_caption_api_pipeline.py
+```
+The API version works similarly to the local version; you just need to configure the API Key and service URL. See `api_pipelines/video_caption_api_pipeline.py` for configuration details.
+:::
+
+You can also run any other pipeline script as needed; the process is similar. Below we introduce the `PromptedVQAGenerator` operator used in the pipeline and how to configure it.
 
 ---
 
@@ -104,14 +123,15 @@ self.storage = FileStorage(
 ]
 ```
 
-### 2. **Video Caption Generation (VideoToCaptionGenerator)**
+### 2. **Video Caption Generation (PromptedVQAGenerator)**
 
-The core step of the pipeline is to use the **Video Caption Generator** (`VideoToCaptionGenerator`) to generate detailed text descriptions for each video.
+The core step of the pipeline is to use the **Prompted VQA Generator** (`PromptedVQAGenerator`) combined with `VideoCaptionGeneratorPrompt` to generate detailed text descriptions for each video.
 
 **Functionality:**
 
 * Analyze video content using VLM models and generate descriptive text
-* Support custom description styles and prompts
+* Use predefined prompt templates to guide the model in generating high-quality captions
+* Support custom system prompts and description styles
 * Configurable generation parameters (temperature, top_p, etc.)
 
 **Input:** Video file paths and conversation format data  
@@ -122,7 +142,7 @@ The core step of the pipeline is to use the **Video Caption Generator** (`VideoT
 ```python
 self.vlm_serving = LocalModelVLMServing_vllm(
     hf_model_name_or_path="Qwen/Qwen2.5-VL-7B-Instruct",
-    hf_cache_dir="./dataflow_cache",
+    hf_cache_dir='./dataflow_cache',
     vllm_tensor_parallel_size=1,          # Set to 1 for single GPU, or number of GPUs
     vllm_temperature=0.7,                 # Generation temperature, controls randomness
     vllm_top_p=0.9,                       # Top-p sampling parameter
@@ -132,23 +152,31 @@ self.vlm_serving = LocalModelVLMServing_vllm(
 )
 ```
 
+**Prompt Template Configuration**:
+
+```python
+self.prompt_template = VideoCaptionGeneratorPrompt()
+```
+
 **Operator Initialization**:
 
 ```python
-self.video_to_caption_generator = VideoToCaptionGenerator(
-    vlm_serving=self.vlm_serving,
+self.prompted_vqa_generator = PromptedVQAGenerator(
+    serving=self.vlm_serving,
+    system_prompt="You are a helpful assistant.",  # System prompt
+    prompt_template=self.prompt_template           # Prompt template for video caption generation
 )
 ```
 
 **Operator Run**:
 
 ```python
-self.video_to_caption_generator.run(
+self.prompted_vqa_generator.run(
     storage=self.storage.step(),
-    input_image_key="image",              # Input image field (optional)
-    input_video_key="video",              # Input video field
-    input_conversation_key="conversation", # Input conversation field
-    output_key="caption",                 # Output caption field
+    input_image_key="image",                 # Input image field (optional)
+    input_video_key="video",                 # Input video field
+    input_conversation_key="conversation",   # Input conversation field
+    output_answer_key="caption",             # Output caption field
 )
 ```
 
@@ -174,12 +202,13 @@ The final output includes:
 
 ## 4. Pipeline Example
 
-An example pipeline demonstrating how to use VideoToCaptionGenerator for video caption generation:
+An example pipeline demonstrating how to use PromptedVQAGenerator combined with VideoCaptionGeneratorPrompt for video caption generation:
 
 ```python
-from dataflow.operators.core_vision import VideoToCaptionGenerator
+from dataflow.operators.core_vision import PromptedVQAGenerator
 from dataflow.serving import LocalModelVLMServing_vllm
 from dataflow.utils.storage import FileStorage
+from dataflow.prompts.video import VideoCaptionGeneratorPrompt
 
 class VideoCaptionGenerator():
     def __init__(self):
@@ -190,12 +219,11 @@ class VideoCaptionGenerator():
             file_name_prefix="video_caption",
             cache_type="json",
         )
-        self.model_cache_dir = './dataflow_cache'
 
         # -------- VLM Model Service --------
         self.vlm_serving = LocalModelVLMServing_vllm(
             hf_model_name_or_path="Qwen/Qwen2.5-VL-7B-Instruct",
-            hf_cache_dir=self.model_cache_dir,
+            hf_cache_dir='./dataflow_cache',
             vllm_tensor_parallel_size=1,
             vllm_temperature=0.7,
             vllm_top_p=0.9, 
@@ -204,18 +232,24 @@ class VideoCaptionGenerator():
             vllm_gpu_memory_utilization=0.9
         )
 
+        # -------- Prompt Template Configuration --------
+        self.prompt_template = VideoCaptionGeneratorPrompt()
+
         # -------- Video Caption Generator Operator --------
-        self.video_to_caption_generator = VideoToCaptionGenerator(
-            vlm_serving = self.vlm_serving,
+        self.prompted_vqa_generator = PromptedVQAGenerator(
+            serving=self.vlm_serving,
+            system_prompt="You are a helpful assistant.",
+            prompt_template=self.prompt_template
         )
 
     def forward(self):
-        self.video_to_caption_generator.run(
-            storage = self.storage.step(),
+        # Call PromptedVQAGenerator to generate captions
+        self.prompted_vqa_generator.run(
+            storage=self.storage.step(),
             input_image_key="image",
             input_video_key="video",
             input_conversation_key="conversation",
-            output_key="caption",
+            output_answer_key="caption",
         )
 
 if __name__ == "__main__":

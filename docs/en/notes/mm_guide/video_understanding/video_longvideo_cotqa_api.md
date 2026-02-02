@@ -60,11 +60,11 @@ cd run_dataflow_mm
 
 ### Step 3: Initialize DataFlow-MM
 ```bash
-dataflow init
+dataflowmm init
 ```
 You will see:
 ```bash
-run_dataflow_mm/pipelines/gpu_pipelines/video_longvideo_cotqa_api_pipeline.py  
+run_dataflow_mm/api_pipelines/video_longvideo_cotqa_api_pipeline.py  
 ```
 
 ### Step 4: Configure parameters
@@ -112,7 +112,7 @@ pipeline = LongVideoPipelineAPI(
 
 ### Step 5: One-click run
 ```bash
-python pipelines/gpu_pipelines/video_longvideo_cotqa_api_pipeline.py
+python api_pipelines/video_longvideo_cotqa_api_pipeline.py
 ```
 
 ---
@@ -240,7 +240,7 @@ self.video_clip_generator.run(
 )
 ```
 
-#### Step 5: Caption Generation (VideoToCaptionGenerator + API)
+#### Step 5: Caption Generation (PromptedVQAGenerator + API)
 
 **Functionality:** Use VLM API to generate detailed captions for each video clip
 
@@ -251,25 +251,32 @@ self.vlm_serving = APIVLMServing_openai(
     api_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
     key_name_of_api_key="DF_API_KEY",
     model_name="qwen3-vl-8b-instruct",
+    image_io=None,
+    send_request_stream=False,
     max_workers=10,
     timeout=1800
 )
 
+# Initialize caption prompt template
+VIDEO_CAPTION_PROMPT = "Elaborate on the visual and narrative elements of the video in detail."
+self.caption_prompt_template = DiyVideoPrompt(VIDEO_CAPTION_PROMPT)
+
 # Initialize caption generator
-self.video_to_caption_generator = VideoToCaptionGenerator(
-    vlm_serving=self.vlm_serving,
-    prompt_template="Elaborate on the visual and narrative elements of the video in detail.",
+self.caption_vqa_generator = PromptedVQAGenerator(
+    serving=self.vlm_serving,
+    system_prompt="You are a helpful assistant.",
+    prompt_template=self.caption_prompt_template
 )
 ```
 
 **Operator Run**:
 ```python
-self.video_to_caption_generator.run(
+self.caption_vqa_generator.run(
     storage=storage.step(),
     input_image_key="image",
     input_video_key="video",
-    input_conversation_key="conversation",
-    output_key="caption",
+    input_conversation_key=input_conversation_key,
+    output_answer_key=output_key,
 )
 ```
 
@@ -503,9 +510,8 @@ from dataflow.core.Operator import OperatorABC
 from dataflow.utils.storage import FileStorage
 from dataflow.operators.core_vision import (
     VideoInfoFilter, VideoSceneFilter, VideoClipFilter,
-    VideoClipGenerator, VideoToCaptionGenerator,
-    VideoMergedCaptionGenerator, VideoCaptionToQAGenerator,
-    PromptedVQAGenerator
+    VideoClipGenerator, VideoMergedCaptionGenerator,
+    VideoCaptionToQAGenerator, PromptedVQAGenerator
 )
 from dataflow.serving.api_vlm_serving_openai import APIVLMServing_openai
 from dataflow.prompts.video import DiyVideoPrompt
@@ -565,9 +571,11 @@ class LongVideoPipelineAPI(OperatorABC):
             model_name=vlm_model_name,
             max_workers=vlm_max_workers,
         )
-        self.video_to_caption_generator = VideoToCaptionGenerator(
-            vlm_serving=self.vlm_serving,
-            prompt_template=VIDEO_CAPTION_PROMPT,
+        self.caption_prompt_template = DiyVideoPrompt(VIDEO_CAPTION_PROMPT)
+        self.caption_vqa_generator = PromptedVQAGenerator(
+            serving=self.vlm_serving,
+            system_prompt="You are a helpful assistant.",
+            prompt_template=self.caption_prompt_template
         )
         self.video_merged_caption_generator = VideoMergedCaptionGenerator()
         

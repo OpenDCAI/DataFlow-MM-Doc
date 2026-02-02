@@ -35,21 +35,22 @@ cd run_dataflow_mm
 
 ### 第二步：初始化 DataFlow-MM
 ```bash
-dataflow init
+dataflowmm init
 ```
 这时你会看到：
 ```bash
-run_dataflow_mm/pipelines/gpu_pipelines/video_caption_pipeline.py  
+run_dataflow_mm/playground/video_caption_pipeline.py  
 ```
 
-### 第三步：配置模型路径
+### 第三步：配置模型路径和 Prompt
 
-在 `video_caption_pipeline.py` 中配置 VLM 模型路径：
+在 `video_caption_pipeline.py` 中配置 VLM 模型路径和 prompt template：
 
 ```python
+# VLM 模型配置
 self.vlm_serving = LocalModelVLMServing_vllm(
     hf_model_name_or_path="Qwen/Qwen2.5-VL-7B-Instruct",  # 修改为你的模型路径
-    hf_cache_dir="./dataflow_cache",
+    hf_cache_dir='./dataflow_cache',
     vllm_tensor_parallel_size=1,
     vllm_temperature=0.7,
     vllm_top_p=0.9,
@@ -57,14 +58,32 @@ self.vlm_serving = LocalModelVLMServing_vllm(
     vllm_max_model_len=51200,
     vllm_gpu_memory_utilization=0.9
 )
+
+# Prompt Template 配置
+self.prompt_template = VideoCaptionGeneratorPrompt()
+
+# 算子初始化
+self.prompted_vqa_generator = PromptedVQAGenerator(
+    serving=self.vlm_serving,
+    system_prompt="You are a helpful assistant.",
+    prompt_template=self.prompt_template
+)
 ```
 
 ### 第四步：一键运行
 ```bash
-python pipelines/gpu_pipelines/video_caption_pipeline.py
+python playground/video_caption_pipeline.py
 ```
 
-此外，你可以根据自己的需求选择任意其他的 Pipeline 代码运行，其运行方式都是类似的。接下来，我们会介绍在 Pipeline 中使用到的算子以及如何进行参数配置。
+::: tip API 版本
+如果你希望使用 API 服务而非本地模型，可以使用 API 版本的流水线：
+```bash
+python api_pipelines/video_caption_api_pipeline.py
+```
+API 版本的使用方式与本地版本类似，只需配置 API Key 和服务地址即可。详情参见 `api_pipelines/video_caption_api_pipeline.py` 中的配置说明。
+:::
+
+此外，你可以根据自己的需求选择任意其他的 Pipeline 代码运行，其运行方式都是类似的。接下来，我们会介绍在 Pipeline 中使用到的 `PromptedVQAGenerator` 算子以及如何进行参数配置。
 
 ---
 
@@ -104,14 +123,15 @@ self.storage = FileStorage(
 ]
 ```
 
-### 2. **视频描述生成（VideoToCaptionGenerator）**
+### 2. **视频描述生成（PromptedVQAGenerator）**
 
-流程的核心步骤是使用**视频描述生成器**（`VideoToCaptionGenerator`）为每个视频生成详细的文本描述。
+流程的核心步骤是使用**提示式视频问答生成器**（`PromptedVQAGenerator`）结合 `VideoCaptionGeneratorPrompt` 为每个视频生成详细的文本描述。
 
 **功能：**
 
 * 利用 VLM 模型分析视频内容并生成描述文本
-* 支持自定义描述风格和提示词
+* 使用预定义的 prompt template 来引导模型生成高质量描述
+* 支持自定义 system prompt 和描述风格
 * 可配置生成参数（温度、top_p 等）
 
 **输入**：视频文件路径和对话格式数据  
@@ -122,7 +142,7 @@ self.storage = FileStorage(
 ```python
 self.vlm_serving = LocalModelVLMServing_vllm(
     hf_model_name_or_path="Qwen/Qwen2.5-VL-7B-Instruct",
-    hf_cache_dir="./dataflow_cache",
+    hf_cache_dir='./dataflow_cache',
     vllm_tensor_parallel_size=1,          # 单卡设为 1，多卡可设为 GPU 数量
     vllm_temperature=0.7,                 # 生成温度，控制随机性
     vllm_top_p=0.9,                       # Top-p 采样参数
@@ -132,23 +152,31 @@ self.vlm_serving = LocalModelVLMServing_vllm(
 )
 ```
 
+**Prompt Template 配置**：
+
+```python
+self.prompt_template = VideoCaptionGeneratorPrompt()
+```
+
 **算子初始化**：
 
 ```python
-self.video_to_caption_generator = VideoToCaptionGenerator(
-    vlm_serving=self.vlm_serving,
+self.prompted_vqa_generator = PromptedVQAGenerator(
+    serving=self.vlm_serving,
+    system_prompt="You are a helpful assistant.",  # 系统提示词
+    prompt_template=self.prompt_template           # 视频描述生成的提示模板
 )
 ```
 
 **算子运行**：
 
 ```python
-self.video_to_caption_generator.run(
+self.prompted_vqa_generator.run(
     storage=self.storage.step(),
-    input_image_key="image",              # 输入图像字段（可选）
-    input_video_key="video",              # 输入视频字段
-    input_conversation_key="conversation", # 输入对话字段
-    output_key="caption",                 # 输出描述字段
+    input_image_key="image",                 # 输入图像字段（可选）
+    input_video_key="video",                 # 输入视频字段
+    input_conversation_key="conversation",   # 输入对话字段
+    output_answer_key="caption",             # 输出描述字段
 )
 ```
 
@@ -174,12 +202,13 @@ self.video_to_caption_generator.run(
 
 ## 4. 流水线示例
 
-以下给出示例流水线，展示如何使用 VideoToCaptionGenerator 进行视频描述生成。
+以下给出示例流水线，展示如何使用 PromptedVQAGenerator 结合 VideoCaptionGeneratorPrompt 进行视频描述生成。
 
 ```python
-from dataflow.operators.core_vision import VideoToCaptionGenerator
+from dataflow.operators.core_vision import PromptedVQAGenerator
 from dataflow.serving import LocalModelVLMServing_vllm
 from dataflow.utils.storage import FileStorage
+from dataflow.prompts.video import VideoCaptionGeneratorPrompt
 
 class VideoCaptionGenerator():
     def __init__(self):
@@ -190,12 +219,11 @@ class VideoCaptionGenerator():
             file_name_prefix="video_caption",
             cache_type="json",
         )
-        self.model_cache_dir = './dataflow_cache'
 
         # -------- VLM 模型服务 --------
         self.vlm_serving = LocalModelVLMServing_vllm(
             hf_model_name_or_path="Qwen/Qwen2.5-VL-7B-Instruct",
-            hf_cache_dir=self.model_cache_dir,
+            hf_cache_dir='./dataflow_cache',
             vllm_tensor_parallel_size=1,
             vllm_temperature=0.7,
             vllm_top_p=0.9, 
@@ -204,18 +232,24 @@ class VideoCaptionGenerator():
             vllm_gpu_memory_utilization=0.9
         )
 
+        # -------- Prompt Template 配置 --------
+        self.prompt_template = VideoCaptionGeneratorPrompt()
+
         # -------- 视频描述生成算子 --------
-        self.video_to_caption_generator = VideoToCaptionGenerator(
-            vlm_serving = self.vlm_serving,
+        self.prompted_vqa_generator = PromptedVQAGenerator(
+            serving=self.vlm_serving,
+            system_prompt="You are a helpful assistant.",
+            prompt_template=self.prompt_template
         )
 
     def forward(self):
-        self.video_to_caption_generator.run(
-            storage = self.storage.step(),
+        # 调用 PromptedVQAGenerator 生成描述
+        self.prompted_vqa_generator.run(
+            storage=self.storage.step(),
             input_image_key="image",
             input_video_key="video",
             input_conversation_key="conversation",
-            output_key="caption",
+            output_answer_key="caption",
         )
 
 if __name__ == "__main__":

@@ -38,11 +38,13 @@ def run(
     input_gt_solution_key: str = "solution",
     input_question_type_key: str = "problem_type",
     output_reward_key: str = "reward"
-):
+) -> str:
     ...
 ```
 
 Executes the main logic: reads model outputs, ground truth solutions, and question types from storage, calculates scores based on question types, and writes back to storage.
+
+**Returns:** `str` - Output field name (the value of `output_reward_key`)
 
 ## 🧾 `run` Parameters
 

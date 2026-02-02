@@ -35,11 +35,11 @@ cd run_dataflow_mm
 
 ### 第二步：初始化 DataFlow-MM
 ```bash
-dataflow init
+dataflowmm init
 ```
 这时你会看到：
 ```bash
-run_dataflow_mm/pipelines/gpu_pipelines/video_qa_pipeline.py  
+run_dataflow_mm/playground/video_qa_pipeline.py  
 ```
 
 ### 第三步：配置模型路径
@@ -61,8 +61,16 @@ self.vlm_serving = LocalModelVLMServing_vllm(
 
 ### 第四步：一键运行
 ```bash
-python pipelines/gpu_pipelines/video_qa_pipeline.py
+python playground/video_qa_pipeline.py
 ```
+
+::: tip API 版本
+如果你希望使用 API 服务而非本地模型，可以使用 API 版本的流水线：
+```bash
+python api_pipelines/video_qa_api_pipeline.py
+```
+API 版本的使用方式与本地版本类似，只需配置 API Key 和服务地址即可。详情参见 `api_pipelines/video_qa_api_pipeline.py` 中的配置说明。
+:::
 
 此外，你可以根据自己的需求调整生成策略（是否在生成 QA 时使用视频输入）。接下来，我们会详细介绍流水线中的各个步骤和参数配置。
 
@@ -104,14 +112,15 @@ self.storage = FileStorage(
 ]
 ```
 
-### 2. **视频描述生成（VideoToCaptionGenerator）**
+### 2. **视频描述生成（PromptedVQAGenerator）**
 
-流程的第一步是使用**视频描述生成器**（`VideoToCaptionGenerator`）为视频生成详细的文本描述。
+流程的第一步是使用**通用 VQA 生成器**（`PromptedVQAGenerator`）结合 `VideoCaptionGeneratorPrompt` 为视频生成详细的文本描述。
 
 **功能：**
 
 * 利用 VLM 模型分析视频内容并生成描述文本
 * 为后续的问答生成提供内容基础
+* 使用提示模板（Prompt Template）配置生成内容的格式和风格
 
 **输入**：视频文件路径和对话格式数据  
 **输出**：生成的视频描述文本（`caption` 字段）
@@ -119,20 +128,26 @@ self.storage = FileStorage(
 **算子初始化**：
 
 ```python
-self.video_to_caption_generator = VideoToCaptionGenerator(
-    vlm_serving=self.vlm_serving,
+from dataflow.prompts.video import VideoCaptionGeneratorPrompt
+
+self.prompt_template = VideoCaptionGeneratorPrompt()
+
+self.prompted_vqa_generator = PromptedVQAGenerator(
+    serving=self.vlm_serving,
+    system_prompt="You are a helpful assistant.",
+    prompt_template=self.prompt_template
 )
 ```
 
 **算子运行**：
 
 ```python
-self.video_to_caption_generator.run(
+self.prompted_vqa_generator.run(
     storage=self.storage.step(),
     input_image_key="image",              # 输入图像字段（可选）
     input_video_key="video",              # 输入视频字段
     input_conversation_key="conversation", # 输入对话字段
-    output_key="caption",                 # 输出描述字段
+    output_answer_key="caption",          # 输出描述字段
 )
 ```
 
@@ -205,18 +220,15 @@ self.videocaption_to_qa_generator.run(
 以下给出示例流水线，展示如何使用 VideoVQAGenerator 进行视频问答生成。
 
 ```python
-from dataflow.operators.core_vision import VideoToCaptionGenerator, VideoCaptionToQAGenerator
-from dataflow.operators.conversations import Conversation2Message
+from dataflow.operators.core_vision import PromptedVQAGenerator, VideoCaptionToQAGenerator
 from dataflow.serving import LocalModelVLMServing_vllm
 from dataflow.utils.storage import FileStorage
+from dataflow.prompts.video import VideoCaptionGeneratorPrompt
 
 class VideoVQAGenerator():
-    def __init__(self, use_video_in_qa=True):
+    def __init__(self):
         """
-        Args:
-            use_video_in_qa: 是否在生成 QA 时输入视频。
-                            True: 同时使用 caption 和视频生成问题
-                            False: 仅使用 caption 生成问题（不输入视频）
+        Initialize VideoVQAGenerator with default parameters.
         """
         self.storage = FileStorage(
             first_entry_file_name="./dataflow/example/video_caption/sample_data.json",
@@ -224,11 +236,10 @@ class VideoVQAGenerator():
             file_name_prefix="video_vqa",
             cache_type="json",
         )
-        self.model_cache_dir = './dataflow_cache'
 
         self.vlm_serving = LocalModelVLMServing_vllm(
             hf_model_name_or_path="Qwen/Qwen2.5-VL-7B-Instruct",
-            hf_cache_dir=self.model_cache_dir,
+            hf_cache_dir="./dataflow_cache",
             vllm_tensor_parallel_size=1,
             vllm_temperature=0.7,
             vllm_top_p=0.9, 
@@ -237,23 +248,30 @@ class VideoVQAGenerator():
             vllm_gpu_memory_utilization=0.9
         )
 
-        self.video_to_caption_generator = VideoToCaptionGenerator(
-            vlm_serving = self.vlm_serving,
+        self.prompt_template = VideoCaptionGeneratorPrompt()
+        
+        self.prompted_vqa_generator = PromptedVQAGenerator(
+            serving=self.vlm_serving,
+            system_prompt="You are a helpful assistant.",
+            prompt_template=self.prompt_template
         )
+        
         self.videocaption_to_qa_generator = VideoCaptionToQAGenerator(
-            vlm_serving = self.vlm_serving,
-            use_video_input = use_video_in_qa,  # 控制是否使用视频输入
+            vlm_serving=self.vlm_serving,
+            use_video_input=True,  # 控制是否使用视频输入
         )
 
     def forward(self):
-        self.video_to_caption_generator.run(
-            storage = self.storage.step(),
+        # Step 1: Generate video captions using PromptedVQAGenerator
+        self.prompted_vqa_generator.run(
+            storage=self.storage.step(),
             input_image_key="image",
             input_video_key="video",
             input_conversation_key="conversation",
-            output_key="caption",
+            output_answer_key="caption",
         )
         
+        # Step 2: Generate QA from captions
         self.videocaption_to_qa_generator.run(
             storage = self.storage.step(),
             input_image_key="image",
@@ -262,12 +280,7 @@ class VideoVQAGenerator():
             output_key="qa",
         )
 
-if __name__ == "__main__":    
-    # 使用视频输入来生成 QA（默认行为）
-    model = VideoVQAGenerator(use_video_in_qa=True)
-    
-    # 不使用视频输入，仅基于 caption 生成 QA
-    # model = VideoVQAGenerator(use_video_in_qa=False)
-    
+if __name__ == "__main__":
+    model = VideoVQAGenerator()
     model.forward()
 ```

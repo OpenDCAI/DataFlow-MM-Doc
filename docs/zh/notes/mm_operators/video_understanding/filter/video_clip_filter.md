@@ -21,7 +21,12 @@ def __init__(
     output_key: str = "video_clips",
     drop_invalid_timestamps: bool = False,
     disable_parallel: bool = False,
-    num_workers: int = 16
+    num_workers: int = 16,
+    frames_min: Optional[int] = None,
+    frames_max: Optional[int] = None,
+    fps_min: Optional[float] = None,
+    fps_max: Optional[float] = None,
+    resolution_max: Optional[int] = None,
 ):
     ...
 ```
@@ -37,6 +42,11 @@ def __init__(
 | `drop_invalid_timestamps`  | `bool`  | `False`        | 是否丢弃无效时间戳的样本                              |
 | `disable_parallel`          | `bool`  | `False`        | 是否禁用并行处理                                |
 | `num_workers`               | `int`   | `16`           | 并行处理的 worker 数量                           |
+| `frames_min`                | `Optional[int]`   | `None`  | 最小帧数过滤（低于此值的片段会被过滤掉）                   |
+| `frames_max`                | `Optional[int]`   | `None`  | 最大帧数过滤（高于此值的片段会被过滤掉）                   |
+| `fps_min`                   | `Optional[float]` | `None`  | 最小FPS过滤（低于此值的片段会被过滤掉）                    |
+| `fps_max`                   | `Optional[float]` | `None`  | 最大FPS过滤（高于此值的片段会被过滤掉）                    |
+| `resolution_max`            | `Optional[int]`   | `None`  | 最大分辨率过滤（总像素数 width*height，高于此值的片段会被过滤掉） |
 
 ---
 
@@ -49,7 +59,12 @@ def run(
     input_video_key: Optional[str] = None,
     video_info_key: Optional[str] = None,
     video_scene_key: Optional[str] = None,
-    output_key: Optional[str] = None
+    output_key: Optional[str] = None,
+    frames_min: Optional[int] = None,
+    frames_max: Optional[int] = None,
+    fps_min: Optional[float] = None,
+    fps_max: Optional[float] = None,
+    resolution_max: Optional[int] = None,
 ):
     ...
 ```
@@ -65,6 +80,11 @@ def run(
 | `video_info_key`  | `Optional[str]`    | `None`         | 视频信息字段名（覆盖初始化参数）                         |
 | `video_scene_key` | `Optional[str]`    | `None`         | 视频场景字段名（覆盖初始化参数）                         |
 | `output_key`      | `Optional[str]`    | `None`         | 输出字段名（覆盖初始化参数）                           |
+| `frames_min`      | `Optional[int]`    | `None`         | 最小帧数过滤（覆盖初始化参数）                          |
+| `frames_max`      | `Optional[int]`    | `None`         | 最大帧数过滤（覆盖初始化参数）                          |
+| `fps_min`         | `Optional[float]`  | `None`         | 最小FPS过滤（覆盖初始化参数）                          |
+| `fps_max`         | `Optional[float]`  | `None`         | 最大FPS过滤（覆盖初始化参数）                          |
+| `resolution_max`  | `Optional[int]`    | `None`         | 最大分辨率过滤（覆盖初始化参数）                         |
 
 ---
 
@@ -116,19 +136,22 @@ filter_op.run(
 
 **每个片段（clip）的字段：**
 
-| 字段                | 类型            | 说明          |
-| :---------------- | :------------ | :---------- |
-| `id`              | `str`         | 片段ID        |
-| `video_path`      | `str`         | 视频路径        |
-| `num_frames`      | `int`         | 帧数          |
-| `height`          | `int`         | 高度（像素）      |
-| `width`           | `int`         | 宽度（像素）      |
-| `fps`             | `float`       | 帧率          |
-| `timestamp_start` | `str`         | 开始时间戳       |
-| `timestamp_end`   | `str`         | 结束时间戳       |
-| `frame_start`     | `int`         | 开始帧索引       |
-| `frame_end`       | `int`         | 结束帧索引       |
-| `duration_sec`    | `float`       | 时长（秒）       |
+| 字段                | 类型            | 说明              |
+| :---------------- | :------------ | :-------------- |
+| `id`              | `str`         | 片段ID            |
+| `video_path`      | `str`         | 视频路径            |
+| `num_frames`      | `int`         | 帧数              |
+| `height`          | `int`         | 高度（像素）          |
+| `width`           | `int`         | 宽度（像素）          |
+| `aspect_ratio`    | `float`       | 宽高比（width/height） |
+| `fps`             | `float`       | 帧率              |
+| `resolution`      | `str`         | 分辨率字符串（如"1920x1080"） |
+| `timestamp_start` | `float`       | 开始时间戳（秒）        |
+| `timestamp_end`   | `float`       | 结束时间戳（秒）        |
+| `frame_start`     | `int`         | 开始帧索引           |
+| `frame_end`       | `int`         | 结束帧索引           |
+| `duration_sec`    | `float`       | 时长（秒）           |
+| `id_ori`          | `str`         | 原始ID            |
 
 示例输入：
 
@@ -162,12 +185,15 @@ filter_op.run(
         "num_frames": 150,
         "height": 1080,
         "width": 1920,
+        "aspect_ratio": 1.777,
         "fps": 30.0,
-        "timestamp_start": "00:00:00.000",
-        "timestamp_end": "00:00:05.000",
+        "resolution": "1920x1080",
+        "timestamp_start": 0.0,
+        "timestamp_end": 5.0,
         "frame_start": 0,
         "frame_end": 150,
-        "duration_sec": 5.0
+        "duration_sec": 5.0,
+        "id_ori": "video1"
       },
       {
         "id": "video1_1",
@@ -175,12 +201,15 @@ filter_op.run(
         "num_frames": 150,
         "height": 1080,
         "width": 1920,
+        "aspect_ratio": 1.777,
         "fps": 30.0,
-        "timestamp_start": "00:00:10.000",
-        "timestamp_end": "00:00:15.000",
+        "resolution": "1920x1080",
+        "timestamp_start": 10.0,
+        "timestamp_end": 15.0,
         "frame_start": 300,
         "frame_end": 450,
-        "duration_sec": 5.0
+        "duration_sec": 5.0,
+        "id_ori": "video1"
       }
     ]
   }
