@@ -141,8 +141,6 @@ Input should be a DataFrame where each row represents a video clip's caption inf
 }
 ```
 
-**Note:** According to the code implementation, the first character of each merged caption is converted to lowercase (except for the first clip).
-
 ---
 
 ## 🔄 Typical Workflow
