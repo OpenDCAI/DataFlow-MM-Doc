@@ -101,9 +101,9 @@ storage = FileStorage(
 ]
 ```
 
-### 2. **视频处理流水线（VideoFilteredClipGenerator）**
+### 2. **视频处理流水线**
 
-流程的核心是 **VideoFilteredClipGenerator** 算子，它整合了9个处理步骤。
+它整合了8个处理步骤。
 
 #### 步骤 1：视频信息提取（VideoInfoFilter）
 
