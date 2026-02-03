@@ -63,7 +63,7 @@ def run(
     output_key: Optional[str] = None,
     overlap: Optional[bool] = None,
     use_fixed_interval: Optional[bool] = None
-):
+) -> None:
     ...
 ```
 
@@ -84,11 +84,17 @@ def run(
 
 ## 🧠 示例用法
 
+::: tip 完整示例代码
+完整的流水线示例代码位于：`playground/video_scene_detect_pipeline.py`
+
+在使用 `dataflowmm init` 初始化后，你可以在该路径下找到完整的可运行示例。
+:::
+
 ```python
 from dataflow.utils.storage import FileStorage
-from dataflow.operators.core_vision import VideoSceneFilter
+from dataflow.operators.core_vision import VideoInfoFilter, VideoSceneFilter
 
-# Step 1: 准备 FileStorage（至少包含 video 列，可选 video_info 列）
+# Step 1: 准备 FileStorage（至少包含 video 列）
 storage = FileStorage(
     first_entry_file_name="data/video_scene_input.jsonl",
     cache_path="./cache_local",
@@ -96,8 +102,19 @@ storage = FileStorage(
     cache_type="jsonl"
 )
 
-# Step 2: 初始化算子
-filter_op = VideoSceneFilter(
+# Step 2: 提取视频信息（推荐：先获取 fps 等信息）
+video_info_filter = VideoInfoFilter(
+    backend="opencv",
+    ext=False
+)
+video_info_filter.run(
+    storage=storage.step(),
+    input_video_key="video",
+    output_key="video_info"
+)
+
+# Step 3: 初始化场景检测算子
+scene_filter = VideoSceneFilter(
     frame_skip=0,
     start_remove_sec=0.0,
     end_remove_sec=0.0,
@@ -105,17 +122,17 @@ filter_op = VideoSceneFilter(
     max_seconds=15.0,
     disable_parallel=False,
     num_workers=16,
-    input_video_key="video",
-    video_info_key="video_info",
-    output_key="video_scene",
     use_adaptive_detector=True,
     overlap=False,
     use_fixed_interval=False
 )
 
-# Step 3: 执行场景检测
-filter_op.run(
-    storage=storage.step()
+# Step 4: 执行场景检测（使用 Step 2 提取的 video_info）
+scene_filter.run(
+    storage=storage.step(),
+    input_video_key="video",
+    video_info_key="video_info",
+    output_key="video_scene"
 )
 ```
 

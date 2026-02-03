@@ -43,11 +43,13 @@ def run(
     self,
     storage: DataFlowStorage,
     video_key: str = "video_path"
-):
+) -> list[str]:
     ...
 ```
 
 执行算子主逻辑：从 storage 读取数据表，按行计算视频分辨率，仅保留分辨率在指定范围内的样本行，并写回存储。
+
+**返回值:** `list[str]` - 输出字段名列表，包含 `["video_width", "video_height", "passed_filter"]`
 
 ## 🧾 `run` 参数说明
 

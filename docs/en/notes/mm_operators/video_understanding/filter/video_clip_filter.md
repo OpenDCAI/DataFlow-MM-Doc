@@ -21,7 +21,12 @@ def __init__(
     output_key: str = "video_clips",
     drop_invalid_timestamps: bool = False,
     disable_parallel: bool = False,
-    num_workers: int = 16
+    num_workers: int = 16,
+    frames_min: Optional[int] = None,
+    frames_max: Optional[int] = None,
+    fps_min: Optional[float] = None,
+    fps_max: Optional[float] = None,
+    resolution_max: Optional[int] = None,
 ):
     ...
 ```
@@ -37,6 +42,11 @@ def __init__(
 | `drop_invalid_timestamps`| `bool`   | `False`            | Whether to drop samples with invalid timestamps |
 | `disable_parallel`       | `bool`   | `False`            | Whether to disable parallel processing          |
 | `num_workers`            | `int`    | `16`               | Number of workers for parallel processing      |
+| `frames_min`             | `Optional[int]`    | `None`   | Minimum frames filter (clips below this are filtered out) |
+| `frames_max`             | `Optional[int]`    | `None`   | Maximum frames filter (clips above this are filtered out) |
+| `fps_min`                | `Optional[float]`  | `None`   | Minimum FPS filter (clips below this are filtered out) |
+| `fps_max`                | `Optional[float]`  | `None`   | Maximum FPS filter (clips above this are filtered out) |
+| `resolution_max`         | `Optional[int]`    | `None`   | Maximum resolution filter (total pixels width*height, clips above this are filtered out) |
 
 ---
 
@@ -49,7 +59,12 @@ def run(
     input_video_key: Optional[str] = None,
     video_info_key: Optional[str] = None,
     video_scene_key: Optional[str] = None,
-    output_key: Optional[str] = None
+    output_key: Optional[str] = None,
+    frames_min: Optional[int] = None,
+    frames_max: Optional[int] = None,
+    fps_min: Optional[float] = None,
+    fps_max: Optional[float] = None,
+    resolution_max: Optional[int] = None,
 ):
     ...
 ```
@@ -65,6 +80,11 @@ Executes the main logic: reads data from storage, generates clip metadata for ea
 | `video_info_key`  | `Optional[str]`     | `None`     | Field name for video information (overrides init param) |
 | `video_scene_key` | `Optional[str]`     | `None`     | Field name for video scenes (overrides init param) |
 | `output_key`      | `Optional[str]`     | `None`     | Field name for output (overrides init param)   |
+| `frames_min`      | `Optional[int]`     | `None`     | Minimum frames filter (overrides init param)   |
+| `frames_max`      | `Optional[int]`     | `None`     | Maximum frames filter (overrides init param)   |
+| `fps_min`         | `Optional[float]`   | `None`     | Minimum FPS filter (overrides init param)      |
+| `fps_max`         | `Optional[float]`   | `None`     | Maximum FPS filter (overrides init param)      |
+| `resolution_max`  | `Optional[int]`     | `None`     | Maximum resolution filter (overrides init param)|
 
 ---
 
@@ -116,19 +136,22 @@ filter_op.run(
 
 **Fields in Each Clip:**
 
-| Field             | Type     | Description          |
-| :---------------- | :------- | :------------------- |
-| `id`              | `str`    | Clip ID              |
-| `video_path`      | `str`    | Video path           |
-| `num_frames`      | `int`    | Number of frames     |
-| `height`          | `int`    | Height (pixels)      |
-| `width`           | `int`    | Width (pixels)       |
-| `fps`             | `float`  | Frame rate           |
-| `timestamp_start` | `str`    | Start timestamp      |
-| `timestamp_end`   | `str`    | End timestamp        |
-| `frame_start`     | `int`    | Start frame index    |
-| `frame_end`       | `int`    | End frame index      |
-| `duration_sec`    | `float`  | Duration (seconds)   |
+| Field             | Type     | Description                     |
+| :---------------- | :------- | :------------------------------ |
+| `id`              | `str`    | Clip ID                         |
+| `video_path`      | `str`    | Video path                      |
+| `num_frames`      | `int`    | Number of frames                |
+| `height`          | `int`    | Height (pixels)                 |
+| `width`           | `int`    | Width (pixels)                  |
+| `aspect_ratio`    | `float`  | Aspect ratio (width/height)     |
+| `fps`             | `float`  | Frame rate                      |
+| `resolution`      | `str`    | Resolution string (e.g. "1920x1080") |
+| `timestamp_start` | `float`  | Start timestamp (seconds)       |
+| `timestamp_end`   | `float`  | End timestamp (seconds)         |
+| `frame_start`     | `int`    | Start frame index               |
+| `frame_end`       | `int`    | End frame index                 |
+| `duration_sec`    | `float`  | Duration (seconds)              |
+| `id_ori`          | `str`    | Original ID                     |
 
 Example Input:
 
@@ -162,12 +185,15 @@ Example Output:
         "num_frames": 150,
         "height": 1080,
         "width": 1920,
+        "aspect_ratio": 1.777,
         "fps": 30.0,
-        "timestamp_start": "00:00:00.000",
-        "timestamp_end": "00:00:05.000",
+        "resolution": "1920x1080",
+        "timestamp_start": 0.0,
+        "timestamp_end": 5.0,
         "frame_start": 0,
         "frame_end": 150,
-        "duration_sec": 5.0
+        "duration_sec": 5.0,
+        "id_ori": "video1"
       },
       {
         "id": "video1_1",
@@ -175,12 +201,15 @@ Example Output:
         "num_frames": 150,
         "height": 1080,
         "width": 1920,
+        "aspect_ratio": 1.777,
         "fps": 30.0,
-        "timestamp_start": "00:00:10.000",
-        "timestamp_end": "00:00:15.000",
+        "resolution": "1920x1080",
+        "timestamp_start": 10.0,
+        "timestamp_end": 15.0,
         "frame_start": 300,
         "frame_end": 450,
-        "duration_sec": 5.0
+        "duration_sec": 5.0,
+        "id_ori": "video1"
       }
     ]
   }

@@ -60,59 +60,42 @@ cd run_dataflow_mm
 
 ### 第三步：初始化 DataFlow-MM
 ```bash
-dataflow init
+dataflowmm init
 ```
 这时你会看到：
 ```bash
-run_dataflow_mm/pipelines/gpu_pipelines/video_longvideo_cotqa_api_pipeline.py  
+run_dataflow_mm/api_pipelines/video_longvideo_cotqa_api_pipeline.py  
 ```
 
 ### 第四步：配置参数
 
-在 `video_longvideo_cotqa_api_pipeline.py` 中配置视频处理和 API 服务参数：
+在 `video_longvideo_cotqa_api_pipeline.py` 中，流水线使用默认的配置参数。如需自定义，可在脚本中修改以下默认值：
 
+**视频处理参数**：
+- `backend="opencv"` - 视频处理后端
+- `min_seconds=0.0, max_seconds=10.0` - 场景片段时长范围
+- `use_fixed_interval=True` - 使用固定间隔分割
+
+**VLM API 参数**（用于字幕生成）：
+- `api_url="https://dashscope.aliyuncs.com/compatible-mode/v1"`
+- `model_name="qwen3-vl-8b-instruct"`
+- `max_workers=10, timeout=1800`
+
+**LLM API 参数**（用于推理生成和重新格式化）：
+- `api_url="https://dashscope.aliyuncs.com/compatible-mode/v1"`
+- `model_name="qwen2.5-72b-instruct"`
+- `max_workers=10, timeout=1800`
+
+流水线初始化示例：
 ```python
-pipeline = LongVideoPipelineAPI(
-    # 视频处理参数
-    backend="opencv",
-    ext=False,
-    frame_skip=0,
-    start_remove_sec=0.0,
-    end_remove_sec=0.0,
-    min_seconds=0.0,
-    max_seconds=10.0,
-    use_adaptive_detector=False,
-    overlap=False,
-    use_fixed_interval=True,
-    
-    # VLM API 参数（用于字幕生成）
-    vlm_api_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
-    vlm_api_key_name="DF_API_KEY",
-    vlm_model_name="qwen3-vl-8b-instruct",
-    vlm_max_workers=10,
-    vlm_timeout=1800,
-    
-    # LLM API 参数（用于推理生成）
-    llm_api_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
-    llm_api_key_name="DF_API_KEY",
-    llm_model_name="qwen2.5-72b-instruct",
-    llm_max_workers=10,
-    llm_timeout=1800,
-    
-    # LLM API 参数（用于推理重新格式化）
-    reformat_api_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
-    reformat_api_key_name="DF_API_KEY",
-    reformat_model_name="qwen2.5-72b-instruct",
-    reformat_max_workers=10,
-    reformat_timeout=1800,
-    
-    video_save_dir="./cache/video_clips",
-)
+pipeline = LongVideoPipelineAPI()  # 使用默认参数
 ```
+
+你可以在代码中修改 `__init__` 方法内的参数值来自定义配置。
 
 ### 第五步：一键运行
 ```bash
-python pipelines/gpu_pipelines/video_longvideo_cotqa_api_pipeline.py
+python api_pipelines/video_longvideo_cotqa_api_pipeline.py
 ```
 
 ---
@@ -240,7 +223,7 @@ self.video_clip_generator.run(
 )
 ```
 
-#### 步骤 5：字幕生成（VideoToCaptionGenerator + API）
+#### 步骤 5：字幕生成（PromptedVQAGenerator + API）
 
 **功能：** 使用 VLM API 为每个视频片段生成详细字幕
 
@@ -251,25 +234,32 @@ self.vlm_serving = APIVLMServing_openai(
     api_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
     key_name_of_api_key="DF_API_KEY",
     model_name="qwen3-vl-8b-instruct",
+    image_io=None,
+    send_request_stream=False,
     max_workers=10,
     timeout=1800
 )
 
+# 初始化字幕生成 prompt template
+VIDEO_CAPTION_PROMPT = "Elaborate on the visual and narrative elements of the video in detail."
+self.caption_prompt_template = DiyVideoPrompt(VIDEO_CAPTION_PROMPT)
+
 # 初始化字幕生成器
-self.video_to_caption_generator = VideoToCaptionGenerator(
-    vlm_serving=self.vlm_serving,
-    prompt_template="Elaborate on the visual and narrative elements of the video in detail.",
+self.caption_vqa_generator = PromptedVQAGenerator(
+    serving=self.vlm_serving,
+    system_prompt="You are a helpful assistant.",
+    prompt_template=self.caption_prompt_template
 )
 ```
 
 **算子运行**：
 ```python
-self.video_to_caption_generator.run(
+self.caption_vqa_generator.run(
     storage=storage.step(),
     input_image_key="image",
     input_video_key="video",
-    input_conversation_key="conversation",
-    output_key="caption",
+    input_conversation_key=input_conversation_key,
+    output_answer_key=output_key,
 )
 ```
 
@@ -527,56 +517,65 @@ You are an advanced AI language model designed to refine logical reasoning...
 """
 
 class LongVideoPipelineAPI(OperatorABC):
-    def __init__(
-        self,
-        backend="opencv",
-        ext=False,
-        frame_skip=0,
-        min_seconds=2.0,
-        max_seconds=15.0,
-        use_fixed_interval=False,
-        # VLM API 参数
-        vlm_api_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
-        vlm_api_key_name="DF_API_KEY",
-        vlm_model_name="qwen3-vl-8b-instruct",
-        vlm_max_workers=10,
-        # LLM API 参数
-        llm_api_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
-        llm_api_key_name="DF_API_KEY",
-        llm_model_name="qwen2.5-72b-instruct",
-        llm_max_workers=10,
-        # 重新格式化 API 参数
-        reformat_api_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
-        reformat_api_key_name="DF_API_KEY",
-        reformat_model_name="qwen2.5-72b-instruct",
-        reformat_max_workers=10,
-        video_save_dir="./cache/video_clips",
-    ):
+    """
+    完整的长视频CoTQA处理流水线（API 版本）。
+    集成了字幕生成、推理问答生成和格式化。
+    """
+    
+    def __init__(self):
+        """使用默认 API 模型配置初始化长视频CoTQA流水线"""
         # 初始化视频处理算子
-        self.video_info_filter = VideoInfoFilter(backend=backend, ext=ext)
-        self.video_scene_filter = VideoSceneFilter(...)
+        self.video_info_filter = VideoInfoFilter(
+            backend="opencv",
+            ext=False,
+        )
+        self.video_scene_filter = VideoSceneFilter(
+            frame_skip=0,
+            start_remove_sec=0.0,
+            end_remove_sec=0.0,
+            min_seconds=0.0,
+            max_seconds=10.0,
+            disable_parallel=True,
+            use_adaptive_detector=False,
+            overlap=False,
+            use_fixed_interval=True,
+        )
         self.video_clip_filter = VideoClipFilter()
-        self.video_clip_generator = VideoClipGenerator(video_save_dir=video_save_dir)
+        self.video_clip_generator = VideoClipGenerator(
+            video_save_dir="./cache/video_clips",
+        )
         
         # 初始化 VLM API 服务（字幕生成）
         self.vlm_serving = APIVLMServing_openai(
-            api_url=vlm_api_url,
-            key_name_of_api_key=vlm_api_key_name,
-            model_name=vlm_model_name,
-            max_workers=vlm_max_workers,
+            api_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+            key_name_of_api_key="DF_API_KEY",
+            model_name="qwen3-vl-8b-instruct",
+            image_io=None,
+            send_request_stream=False,
+            max_workers=10,
+            timeout=1800
         )
-        self.video_to_caption_generator = VideoToCaptionGenerator(
-            vlm_serving=self.vlm_serving,
-            prompt_template=VIDEO_CAPTION_PROMPT,
+        
+        # 初始化字幕生成 prompt template 和生成器
+        self.caption_prompt_template = DiyVideoPrompt(VIDEO_CAPTION_PROMPT)
+        self.caption_vqa_generator = PromptedVQAGenerator(
+            serving=self.vlm_serving,
+            system_prompt="You are a helpful assistant.",
+            prompt_template=self.caption_prompt_template
         )
-        self.video_merged_caption_generator = VideoMergedCaptionGenerator()
+        self.video_merged_caption_generator = VideoMergedCaptionGenerator(
+            caption_key="caption",
+        )
         
         # 初始化 LLM API 服务（推理生成）
         self.llm_serving = APIVLMServing_openai(
-            api_url=llm_api_url,
-            key_name_of_api_key=llm_api_key_name,
-            model_name=llm_model_name,
-            max_workers=llm_max_workers,
+            api_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+            key_name_of_api_key="DF_API_KEY",
+            model_name="qwen2.5-72b-instruct",
+            image_io=None,
+            send_request_stream=False,
+            max_workers=10,
+            timeout=1800
         )
         self.reasoning_qa_generator = VideoCaptionToQAGenerator(
             vlm_serving=self.llm_serving,
@@ -586,10 +585,13 @@ class LongVideoPipelineAPI(OperatorABC):
         
         # 初始化 LLM API 服务（重新格式化）
         self.reformat_serving = APIVLMServing_openai(
-            api_url=reformat_api_url,
-            key_name_of_api_key=reformat_api_key_name,
-            model_name=reformat_model_name,
-            max_workers=reformat_max_workers,
+            api_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+            key_name_of_api_key="DF_API_KEY",
+            model_name="qwen2.5-72b-instruct",
+            image_io=None,
+            send_request_stream=False,
+            max_workers=10,
+            timeout=1800
         )
         self.prompted_vqa_generator = PromptedVQAGenerator(
             serving=self.reformat_serving,
@@ -638,14 +640,12 @@ if __name__ == "__main__":
         cache_type="json",
     )
     
-    pipeline = LongVideoPipelineAPI(
-        use_fixed_interval=True,
-        min_seconds=0.0,
-        max_seconds=10.0,
-        vlm_model_name="qwen3-vl-8b-instruct",
-        llm_model_name="qwen2.5-72b-instruct",
-        reformat_model_name="qwen2.5-72b-instruct",
-    )
+    pipeline = LongVideoPipelineAPI()
     
-    pipeline.run(storage=storage)
+    pipeline.run(
+        storage=storage,
+        input_video_key="video",
+        input_conversation_key="conversation",
+        output_key="caption",
+    )
 ```

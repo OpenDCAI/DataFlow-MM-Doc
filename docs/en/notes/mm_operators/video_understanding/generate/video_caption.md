@@ -41,12 +41,14 @@ def run(
     input_video_key: str = "video",
     input_conversation_key: str = "conversation",
     output_key: str = "caption"
-):
+) -> str:
     ...
 ```
 
 `run` is the main logic for executing video caption generation:
 Read video paths → Build prompts → Call VLM model → Generate text descriptions → Write to output.
+
+**Returns:** The `output_key` field name (string type).
 
 ## 🧾 `run` Parameters
 
@@ -86,14 +88,14 @@ storage = FileStorage(
     file_name_prefix="video_caption",
     cache_type="json",
 )
-storage.step()
 
 # Step 3: Initialize and run operator
 video_caption_generator = VideoToCaptionGenerator(
     vlm_serving=vlm_serving,
 )
 video_caption_generator.run(
-    storage=storage,
+    storage=storage.step(),
+    input_image_key="image",
     input_video_key="video",
     input_conversation_key="conversation",
     output_key="caption"

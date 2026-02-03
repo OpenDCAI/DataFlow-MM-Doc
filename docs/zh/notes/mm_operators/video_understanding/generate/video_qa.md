@@ -42,13 +42,16 @@ def run(
     input_image_key: str = None,
     input_video_key: str = None,
     input_conversation_key: str = "conversation",
+    input_caption_key: str = "caption",
     output_key: str = "answer",
-):
+) -> str:
     ...
 ```
 
 `run` 是算子主逻辑，执行视频问答生成任务：
 读取字幕文本 → 构建QA生成提示词 → 调用VLM模型 → 生成问答对 → 写入输出文件。
+
+**返回值:** 返回 `output_key` 字段名（字符串类型）。
 
 ## 🧾 `run` 参数说明
 
@@ -58,6 +61,7 @@ def run(
 | `input_image_key`        | `str`             | `None`           | 输入数据中图像字段名（可选）                  |
 | `input_video_key`        | `str`             | `None`           | 输入数据中视频字段名（可选）                  |
 | `input_conversation_key` | `str`             | `"conversation"` | 输入数据中对话字段名                      |
+| `input_caption_key`      | `str`             | `"caption"`      | 输入数据中字幕字段名                      |
 | `output_key`             | `str`             | `"answer"`       | 模型生成的问答结果字段名                    |
 
 ---
@@ -88,7 +92,6 @@ storage = FileStorage(
     file_name_prefix="video_qa",
     cache_type="json",
 )
-storage.step()
 
 # Step 3: 初始化并运行算子
 qa_generator = VideoCaptionToQAGenerator(
@@ -96,9 +99,10 @@ qa_generator = VideoCaptionToQAGenerator(
     use_video_input=True,  # 使用视频输入
 )
 qa_generator.run(
-    storage=storage,
+    storage=storage.step(),
     input_video_key="video",
     input_conversation_key="conversation",
+    input_caption_key="caption",
     output_key="answer"
 )
 ```
@@ -216,5 +220,4 @@ qa_generator.run(storage.step())
 - **相关算子:**
   - [VideoToCaptionGenerator](./video_caption.md) - 视频描述生成
   - [VideoMergedCaptionGenerator](./video_merged_caption.md) - 视频合并字幕生成
-  - [VideoCOTQAGenerator](./video_cotqa.md) - 视频链式思考问答生成
 

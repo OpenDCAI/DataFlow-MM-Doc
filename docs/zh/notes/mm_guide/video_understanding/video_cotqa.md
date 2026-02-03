@@ -20,9 +20,11 @@ icon: mdi:thought-bubble
 
 流水线的主要流程包括：
 
-1. **CoT 问答生成**：利用 VLM 模型进行思维链推理，生成包含推理过程的答案。
-2. **答案评估**：评估生成答案的质量，计算奖励分数。
-3. **质量过滤**：基于奖励分数过滤低质量样本，保留高质量数据。
+1. **Prompt 构建**：使用 `VideoCOTQAGeneratorPrompt` 模板构建思维链问答提示。
+2. **CoT 问答生成**：利用 `PromptedVQAGenerator` 和 VLM 模型生成包含 `<think>` 和 `<answer>` 标签的响应。
+3. **响应处理**：提取思考过程和最终答案，生成结构化输出。
+4. **答案评估**：评估生成答案的质量，计算奖励分数。
+5. **质量过滤**：基于奖励分数过滤低质量样本，保留高质量数据。
 
 ---
 
@@ -36,22 +38,22 @@ cd run_dataflow_mm
 
 ### 第二步：初始化 DataFlow-MM
 ```bash
-dataflow init
+dataflowmm init
 ```
 这时你会看到：
 ```bash
-run_dataflow_mm/pipelines/gpu_pipelines/video_cotqa_pipeline.py  
+run_dataflow_mm/gpu_pipelines/video_cotqa_pipeline.py  
 ```
 
 ### 第三步：配置模型路径和过滤阈值
 
-在 `video_cotqa_pipeline.py` 中配置 VLM 模型路径和评分阈值：
+在 `video_cotqa_pipeline.py` 中配置 VLM 模型路径、prompt template 和评分阈值：
 
 ```python
 # VLM 模型配置
 self.vlm_serving = LocalModelVLMServing_vllm(
     hf_model_name_or_path="Qwen/Qwen2.5-VL-7B-Instruct",  # 修改为你的模型路径
-    hf_cache_dir="./dataflow_cache",
+    hf_cache_dir='./dataflow_cache',
     vllm_tensor_parallel_size=1,
     vllm_temperature=1.0,
     vllm_top_p=0.95,
@@ -59,6 +61,13 @@ self.vlm_serving = LocalModelVLMServing_vllm(
     vllm_max_model_len=51200,
     vllm_gpu_memory_utilization=0.9,
 )
+
+# 初始化算子
+self.prompted_vqa_generator = PromptedVQAGenerator(
+    serving=self.vlm_serving,
+    system_prompt="You are a helpful assistant."
+)
+self.prompt_template = VideoCOTQAGeneratorPrompt()
 
 # 评分过滤器配置
 self.score_filter = ScoreFilter(
@@ -68,8 +77,16 @@ self.score_filter = ScoreFilter(
 
 ### 第四步：一键运行
 ```bash
-python pipelines/gpu_pipelines/video_cotqa_pipeline.py
+python gpu_pipelines/video_cotqa_pipeline.py
 ```
+
+::: tip API 版本
+如果你希望使用 API 服务而非本地模型，可以使用 API 版本的流水线：
+```bash
+python api_pipelines/video_cotqa_api_pipeline.py
+```
+API 版本的使用方式与本地版本类似，只需配置 API Key 和服务地址即可。详情参见 `api_pipelines/video_cotqa_api_pipeline.py` 中的配置说明。
+:::
 
 此外，你可以根据自己的需求调整评分阈值和评估策略。接下来，我们会详细介绍流水线中的各个步骤和参数配置。
 
@@ -128,39 +145,82 @@ self.storage = FileStorage(
 ]
 ```
 
-### 2. **CoT 问答生成（VideoCOTQAGenerator）**
+### 2. **CoT 问答生成（PromptedVQAGenerator + VideoCOTQAGeneratorPrompt）**
 
-流程的第一步是使用**思维链问答生成器**（`VideoCOTQAGenerator`）生成包含推理过程的答案。
+流程的第一步是使用 **PromptedVQAGenerator** 结合 **VideoCOTQAGeneratorPrompt** 生成包含推理过程的答案。
 
 **功能：**
 
-* 利用 VLM 模型对视频内容进行分析和推理
-* 生成包含思维链（推理步骤）的详细答案
-* 输出完整的推理过程和最终答案
+* 使用 `VideoCOTQAGeneratorPrompt` 模板构建思维链问答 prompt
+* 根据问题类型（多选题、开放题等）添加特定的后缀
+* 利用 VLM 模型生成包含 `<think>...</think>` 和 `<answer>...</answer>` 标签的响应
+* 提取思考过程和最终答案，生成结构化输出
 
-**输入**：视频、图像（可选）、问题  
-**输出**：推理过程、最终答案、完整响应
+**输入**：视频、图像（可选）、问题、问题类型、选项  
+**输出**：推理过程（process）、最终答案（answer）、完整响应（full_response）
 
 **算子初始化**：
 
 ```python
-self.video_cotqa_generator = VideoCOTQAGenerator(
-    vlm_serving=self.vlm_serving,
+self.prompted_vqa_generator = PromptedVQAGenerator(
+    serving=self.vlm_serving,
+    system_prompt="You are a helpful assistant."
 )
+self.prompt_template = VideoCOTQAGeneratorPrompt()
 ```
 
-**算子运行**：
+**核心处理流程**：
 
 ```python
-self.video_cotqa_generator.run(
-    storage=self.storage.step(),
-    input_video_key="video",                    # 输入视频字段
-    input_image_key="image",                    # 输入图像字段（可选）
-    input_conversation_key="conversation",       # 输入对话字段
-    output_answer_key="answer",                 # 输出答案字段
-    output_process_key="process",               # 输出推理过程字段
-    output_full_response_key="full_response",   # 输出完整响应字段
+# 1. 构建 prompt
+def _build_prompts(self, df):
+    prompts = []
+    for _, row in df.iterrows():
+        problem_type = row.get('problem_type', '')
+        problem = row.get('problem', '')
+        options = row.get('options', [])
+        
+        # 格式化问题（多选题包含选项）
+        if problem_type == 'multiple choice' and options:
+            question = problem + "Options:\n"
+            for op in options:
+                question += op + "\n"
+        else:
+            question = problem
+        
+        # 使用模板构建 prompt
+        type_template = getattr(self.prompt_template, 'type_template', {})
+        type_suffix = type_template.get(problem_type, "")
+        prompt = self.prompt_template.build_prompt(Question=question) + type_suffix
+        prompts.append(prompt)
+    
+    return prompts
+
+# 2. 生成响应
+self.prompted_vqa_generator.run(
+    storage=storage.step(),
+    input_image_key="image",
+    input_video_key="video",
+    input_prompt_key="prompt",
+    output_answer_key="_temp_cotqa_response",
 )
+
+# 3. 提取 <think> 和 <answer> 标签内容
+def _extract_think(output_str: str) -> str:
+    pattern = r'<think>\s*(.*?)\s*</think>'
+    match = re.search(pattern, output_str, re.DOTALL)
+    return match.group(1).strip() if match else ""
+
+def _extract_answer(text: str) -> str:
+    pattern = r'<answer>\s*(.*?)\s*</answer>'
+    match = re.search(pattern, text, re.DOTALL)
+    return match.group(1).strip() if match else ""
+
+# 4. 处理响应生成结构化输出
+answers, processes = self._process_responses(responses)
+df["answer"] = answers
+df["process"] = processes
+df["full_response"] = responses
 ```
 
 ### 3. **答案评估（GeneralTextAnswerEvaluator）**
@@ -274,10 +334,12 @@ self.score_filter.run(
 以下给出示例流水线，展示如何使用 VideoCOTQATest 进行思维链问答生成、评估和过滤。
 
 ```python
-from dataflow.operators.core_vision import VideoCOTQAGenerator, GeneralTextAnswerEvaluator, ScoreFilter
+from dataflow.operators.core_vision import PromptedVQAGenerator, GeneralTextAnswerEvaluator, ScoreFilter
 from dataflow.serving import LocalModelVLMServing_vllm
 from dataflow.utils.storage import FileStorage
+from dataflow.prompts.video import VideoCOTQAGeneratorPrompt
 import os
+import re
 
 class VideoCOTQATest:
     def __init__(self):
@@ -285,17 +347,14 @@ class VideoCOTQATest:
         self.storage = FileStorage(
             first_entry_file_name="./dataflow/example/video_cot_qa/sample_data.json",
             cache_path="./cache",
-            file_name_prefix="video_cotqa_test",
+            file_name_prefix="video_cotqa",
             cache_type="json",
         )
         
         self.model_cache_dir = './dataflow_cache'
         
-        # 初始化 VLM 服务
-        model_path = "Qwen/Qwen2.5-VL-7B-Instruct"
-        
         self.vlm_serving = LocalModelVLMServing_vllm(
-            hf_model_name_or_path=model_path,
+            hf_model_name_or_path="Qwen/Qwen2.5-VL-7B-Instruct",
             hf_cache_dir=self.model_cache_dir,
             vllm_tensor_parallel_size=1,
             vllm_temperature=1.0,
@@ -306,9 +365,11 @@ class VideoCOTQATest:
         )
 
         # 初始化算子
-        self.video_cotqa_generator = VideoCOTQAGenerator(
-            vlm_serving=self.vlm_serving,
+        self.prompted_vqa_generator = PromptedVQAGenerator(
+            serving=self.vlm_serving,
+            system_prompt="You are a helpful assistant."
         )
+        self.prompt_template = VideoCOTQAGeneratorPrompt()
         
         self.evaluator = GeneralTextAnswerEvaluator(
             use_stemmer=True
@@ -318,71 +379,151 @@ class VideoCOTQATest:
             min_score=0.6,
         )
 
+    @staticmethod
+    def _extract_think(output_str: str) -> str:
+        """提取 <think> 和 </think> 标签之间的内容"""
+        pattern = r'<think>\s*(.*?)\s*</think>'
+        match = re.search(pattern, output_str, re.DOTALL)
+        if match:
+            return match.group(1).strip()
+        return ""
+
+    @staticmethod
+    def _extract_answer(text: str) -> str:
+        """提取 <answer> 和 </answer> 标签之间的内容"""
+        pattern = r'<answer>\s*(.*?)\s*</answer>'
+        match = re.search(pattern, text, re.DOTALL)
+        if match:
+            return match.group(1).strip()
+        return ""
+
+    def _build_prompts(self, df):
+        """使用模板为每一行构建 prompt"""
+        prompts = []
+        for _, row in df.iterrows():
+            problem_type = row.get('problem_type', '')
+            problem = row.get('problem', '')
+            options = row.get('options', [])
+            
+            # 格式化问题，多选题包含选项
+            if problem_type == 'multiple choice' and options:
+                question = problem + "Options:\n"
+                for op in options:
+                    question += op + "\n"
+            else:
+                question = problem
+            
+            # 使用 prompt template 构建，并添加类型特定的后缀
+            type_template = getattr(self.prompt_template, 'type_template', {})
+            type_suffix = type_template.get(problem_type, "")
+            prompt = self.prompt_template.build_prompt(Question=question) + type_suffix
+            prompts.append(prompt)
+        
+        return prompts
+    
+    def _process_responses(self, responses):
+        """处理 CoT QA 响应以提取答案和思考链"""
+        answers = []
+        processes = []
+        
+        for response in responses:
+            # 提取思考链和答案
+            think_chain = self._extract_think(response)
+            final_ans = self._extract_answer(response)
+            
+            answers.append(final_ans)
+            processes.append(f"<think>{think_chain}</think>" if think_chain else "")
+        
+        return answers, processes
+    
+    def _print_results_summary(self, result_df):
+        """打印最终结果摘要"""
+        print("\n" + "="*60)
+        print("Final Results:")
+        print("="*60)
+        print(f"Results shape: {result_df.shape}")
+        
+        if result_df.empty:
+            return
+        
+        print("\nColumns:", result_df.columns.tolist())
+        
+        # 计算并显示统计信息
+        if 'reward' in result_df.columns and 'select' in result_df.columns:
+            rewards = result_df['reward'].tolist()
+            selects = result_df['select'].tolist()
+            print(f"\nAverage reward: {sum(rewards)/len(rewards):.4f}")
+            print(f"Selected samples: {sum(selects)}/{len(selects)}")
+        
+        # 打印第一批结果样本
+        print("\nSample results:")
+        cols_to_show = ['answer', 'process', 'reward', 'select']
+        available_cols = [col for col in cols_to_show if col in result_df.columns]
+        print(result_df[available_cols].head())
+
     def run(self):
         print("Running VideoCOTQAGenerator pipeline...")
         
         # 步骤 1: 生成 CoT QA 响应
         print("\n[Step 1/3] Generating CoT QA responses...")
-        answer_key = self.video_cotqa_generator.run(
-            storage=self.storage.step(),
-            input_video_key="video",
-            input_image_key="image",
-            input_conversation_key="conversation",
-            output_answer_key="answer",
-            output_process_key="process",
-            output_full_response_key="full_response",
-        )
-        print(f"Generation finished. Output key: {answer_key}")
         
+        # 加载数据并构建 prompts
+        storage = self.storage.step()
+        df = storage.read("dataframe")
+        
+        # 构建 prompts 并添加到 dataframe
+        prompts = self._build_prompts(df)
+        df["prompt"] = prompts
+        storage.write(df)
+        
+        # 使用 PromptedVQAGenerator 生成响应
+        self.prompted_vqa_generator.run(
+            storage=storage.step(),
+            input_image_key="image",
+            input_video_key="video",
+            input_prompt_key="prompt",
+            output_answer_key="_temp_cotqa_response",
+        )
+        
+        # 读取带有响应的结果
+        storage.step()
+        df = storage.read("dataframe")
+        responses = df["_temp_cotqa_response"].tolist()
+        
+        # 处理响应 - 提取思考链和答案
+        answers, processes = self._process_responses(responses)
+        
+        # 附加提取的答案和过程
+        df["answer"] = answers
+        df["process"] = processes
+        df["full_response"] = responses
+        storage.write(df)
+                
         # 步骤 2: 评估答案并计算奖励
         print("\n[Step 2/3] Evaluating answers and calculating rewards...")
-        reward_key = self.evaluator.run(
+        self.evaluator.run(
             storage=self.storage.step(),
             input_model_output_key="full_response",
             input_gt_solution_key="solution",
             input_question_type_key="problem_type",
             output_reward_key="reward",
         )
-        print(f"Evaluation finished. Output key: {reward_key}")
         
         # 步骤 3: 基于奖励阈值过滤
         print("\n[Step 3/3] Filtering based on reward threshold...")
-        select_key = self.score_filter.run(
+        self.score_filter.run(
             storage=self.storage.step(),
             input_score_key="reward",
             output_select_key="select",
         )
-        print(f"Filtering finished. Output key: {select_key}")
         
-        # 验证结果
-        print("\n" + "="*60)
-        print("Final Results:")
-        print("="*60)
+        # 打印结果摘要
         result_df = self.storage.step().read("dataframe")
-        print(f"Results shape: {result_df.shape}")
-        if not result_df.empty:
-            print("\nColumns:", result_df.columns.tolist())
-            
-            # 计算并显示统计信息
-            if 'reward' in result_df.columns and 'select' in result_df.columns:
-                rewards = result_df['reward'].tolist()
-                selects = result_df['select'].tolist()
-                print(f"\nAverage reward: {sum(rewards)/len(rewards):.4f}")
-                print(f"Selected samples: {sum(selects)}/{len(selects)}")
-            
-            # 打印结果样本
-            print("\nSample results:")
-            cols_to_show = ['answer', 'process', 'reward', 'select']
-            available_cols = [col for col in cols_to_show if col in result_df.columns]
-            print(result_df[available_cols].head())
+        self._print_results_summary(result_df)
 
 if __name__ == "__main__":
     # 如有需要，设置可见 GPU
     # os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-    
-    try:
-        test = VideoCOTQATest()
-        test.run()
-    except Exception as e:
-        print(f"Test failed with error: {e}")
+    test = VideoCOTQATest()
+    test.run()
 ```
