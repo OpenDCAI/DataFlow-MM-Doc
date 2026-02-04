@@ -27,35 +27,52 @@ The main stages of the pipeline include:
 
 ## 2. Quick Start
 
-### Step 1: Prepare Working Directory
+### Step 1: Create a New DataFlow Working Directory
 
 ```bash
-mkdir run_context_vqa
-cd run_context_vqa
+mkdir run_dataflow_mm
+cd run_dataflow_mm
 
 ```
 
-### Step 2: Prepare Script
-
-Save the code from the "Pipeline Example" section below as `context_vqa_pipeline.py`.
-
-### Step 3: Configure Parameters
-
-The pipeline supports command-line parameter configuration. You can specify the model path and input file directly:
+### Step 2: Initialize DataFlow-MM
 
 ```bash
-# Ensure relevant dependencies are installed
-pip install open-dataflow vllm
+dataflow init
 
 ```
 
-### Step 4: Run with One Command
+After initialization, you will see the generated file structure, including:
 
 ```bash
-python context_vqa_pipeline.py \
-  --model_path "Qwen/Qwen2.5-VL-3B-Instruct" \
-  --images_file "path/to/your/images.jsonl" \
-  --cache_path "./cache_local"
+gpu_pipelines/context_vqa.py  
+
+```
+
+### Step 3: Configure Model and Data Paths
+
+Modify the VLM model path and dataset location in `context_vqa.py`:
+
+```python
+parser.add_argument("--model_path", default="Qwen/Qwen2.5-VL-3B-Instruct") # Update to your local model path
+parser.add_argument("--hf_cache_dir", default="~/.cache/huggingface")
+parser.add_argument("--download_dir", default="./ckpt")
+parser.add_argument("--device", choices=["cuda", "cpu", "mps"], default="cuda")
+
+# Update the data path below. 
+# We provide example data at: run_dataflow_mm/example_data/image_to_text_pipeline/capsbench_captions.json
+# Note: You can download the actual images using the "source" URLs provided within the JSON file.
+parser.add_argument("--images_file", default="dataflow/example/image_to_text_pipeline/capsbench_captions.json") 
+parser.add_argument("--cache_path", default="./cache_local")
+parser.add_argument("--file_name_prefix", default="context_vqa")
+parser.add_argument("--cache_type", default="json")
+
+```
+
+### Step 4: Launch the Pipeline
+
+```bash
+python gpu_pipelines/context_vqa.py
 
 ```
 

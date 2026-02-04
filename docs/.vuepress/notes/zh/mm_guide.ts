@@ -24,6 +24,7 @@ export const MMGuide: ThemeNote = defineNoteConfig({
             items: [
                 'install_image_understanding',
                 'context_vqa',
+                'context_vqa_api',
                 'image_gcot',
                 'vision_mct_reasoning_pipeline',
                 'image_region_caption_pipeline',
