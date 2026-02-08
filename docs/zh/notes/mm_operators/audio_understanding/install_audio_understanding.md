@@ -7,5 +7,11 @@ permalink: /zh/mm_operators/install_audio_understanding/
 # 安装
 
 ```bash
+cd ./DataFlow-MM
 pip install open-dataflow-mm[audio]
+```
+
+## 测试数据下载
+```bash
+hf download --repo-type dataset OpenDCAI/dataflow-demo-audio --local-dir ./dataflow/example
 ```
