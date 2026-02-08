@@ -172,6 +172,14 @@ export const MMOperators: ThemeNote = defineNoteConfig({
                     items: [
                         'merge_chunks',
                     ]
+                },
+                {
+                    text: "refine",
+                    collapsed: false,
+                    prefix: 'refine/',
+                    items: [
+                        'text_normalizer',
+                    ]
                 }
             ],
         },

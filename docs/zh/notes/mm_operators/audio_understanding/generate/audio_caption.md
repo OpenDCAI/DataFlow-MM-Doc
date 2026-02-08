@@ -1,5 +1,5 @@
 ---
-title: PromptedAQAGenerator
+title: 通用音频问答算子
 createTime: 2025/07/15 21:33:01
 # icon: material-symbols-light:autoplay
 permalink: /zh/mm_operators/2gjc47qb/
@@ -35,16 +35,18 @@ system_prompt = WhisperTranscriptionPrompt.generate_prompt(
     with_timestamps=False,
 )
 
-def __init__(self, 
-            vlm_serving: VLMServingABC, 
-            system_prompt: str = system_prompt,
-            )
+def __init__(
+    self, 
+    vlm_serving: VLMServingABC, 
+    system_prompt: str = system_prompt,
+)
 ```
 | 参数 | 默认值 | 说明 |
 | :--- | :--- | :--- |
 | `language` | `None` | 音频文件的语言，用于指定转录或翻译的语言。如果为 None，则根据音频内容自动检测语言。 |
 | `task` | `"transcribe"` | 任务类型，可选 `"transcribe"`（语音转录）或 `"translate"`（语音翻译）。 |
 | `with_timestamps` | `False` | 是否在转录结果中包含时间戳。 |
+```
 
 ## `run`函数
 ```python
@@ -64,33 +66,30 @@ def run(self, storage: DataFlowStorage, input_audio_key: str = "audio", input_co
 
 ```python
 from dataflow.operators.core_audio import PromptedAQAGenerator
-from dataflow.operators.conversations import Conversation2Message
 from dataflow.serving import LocalModelVLMServing_vllm
 from dataflow.utils.storage import FileStorage
 
 class AQAGenerator():
     def __init__(self):
         self.storage = FileStorage(
-            first_entry_file_name="./dataflow/example/audio_vqa/sample_data_local.jsonl",
+            first_entry_file_name="../example_data/audio_aqa_pipeline/sample_data.jsonl",
             cache_path="./cache",
             file_name_prefix="audio_aqa",
             cache_type="jsonl",
         )
-        self.model_cache_dir = './dataflow_cache'
 
         self.vlm_serving = LocalModelVLMServing_vllm(
-            hf_model_name_or_path="/path/to/your/Qwen2-Audio-7B-Instruct",
-            hf_cache_dir=self.model_cache_dir,
+            hf_model_name_or_path="Qwen/Qwen2-Audio-7B-Instruct",
+            hf_cache_dir='./dataflow_cache',
             vllm_tensor_parallel_size=8,
             vllm_temperature=0.7,
             vllm_top_p=0.9,
-            vllm_max_tokens=512,
             vllm_gpu_memory_utilization=0.6
         )
 
         self.prompt_generator = PromptedAQAGenerator(
             vlm_serving = self.vlm_serving,
-            system_prompt="You are a helpful agent."
+            system_prompt="You are a helpful assistant."
         )
 
     def forward(self):
@@ -114,10 +113,13 @@ if __name__ == "__main__":
 
 示例输入:
 ```jsonl
-{"audio": ["/path/to/your/audio/audio.wav"], "conversation": [{"from": "human", "value": "<audio>\nTranscribe the audio in English." }]}
+{"audio": ["../example_data/audio_aqa_pipeline/test_1.wav"], "conversation": [{"from": "human", "value": "Transcribe the audio into Chinese." }]}
+{"audio": ["../example_data/audio_aqa_pipeline/test_2.wav"], "conversation": [{"from": "human", "value": "Describe the sound in this audio clip." }]}
+
 ```
 
 示例输出:
 ```jsonl
-{"audio": ["/path/to/your/audio/audio.wav"], "conversation": [{"from": "human", "value": "<audio>\nTranscribe the audio in English." }], "answer": "He began a confused complaint against the wizard who had vanished behind the curtain on the left."}
+{"audio":["..\/example_data\/audio_aqa_pipeline\/test_1.wav"],"conversation":[{"from":"human","value":"Transcribe the audio into Chinese."}],"answer":"The audio states: '二十三家全国品牌企业市场份额已达到百分之二十三点三一'"}
+{"audio":["..\/example_data\/audio_aqa_pipeline\/test_2.wav"],"conversation":[{"from":"human","value":"Describe the sound in this audio clip."}],"answer":"The audio contains the sound of a machine turning on and off repeatedly."}
 ```
