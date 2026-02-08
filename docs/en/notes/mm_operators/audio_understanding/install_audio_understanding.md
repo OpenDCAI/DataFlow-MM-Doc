@@ -8,3 +8,8 @@ permalink: /en/mm_operators/install_audio_understanding/
 ```bash
 pip install open-dataflow-mm[audio]
 ```
+
+## Test Data Download
+```bash
+hf download --repo-type dataset OpenDCAI/dataflow-demo-audio --local-dir ./dataflow/example
+```

@@ -66,7 +66,7 @@ export const MMOperators: ThemeNote = defineNoteConfig({
             // ],
             items: [
                 {
-                    text: '安装',
+                    text: 'Installation',
                     collapsed: false,
                     prefix: '',
                     items: ['install_audio_understanding'],
@@ -102,6 +102,14 @@ export const MMOperators: ThemeNote = defineNoteConfig({
                     prefix: 'generaterow/',
                     items: [
                         'merge_chunks',
+                    ]
+                },
+                {
+                    text: "refine",
+                    collapsed: false,
+                    prefix: 'refine/',
+                    items: [
+                        'text_normalizer',
                     ]
                 }
             ],
