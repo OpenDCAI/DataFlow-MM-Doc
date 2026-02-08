@@ -59,7 +59,6 @@ def run(
 
 ```python
 from dataflow.operators.core_audio import CTCForcedAlignmentSampleEvaluator
-from dataflow.operators.conversations import Conversation2Message
 from dataflow.serving import LocalModelVLMServing_vllm
 from dataflow.utils.storage import FileStorage
 
