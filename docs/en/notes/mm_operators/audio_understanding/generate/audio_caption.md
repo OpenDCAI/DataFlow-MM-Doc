@@ -1,5 +1,5 @@
 ---
-title: PromptedAQAGenerator
+title: General Audio Q&A Operator
 createTime: 2025/10/14 18:02:53
 permalink: /en/mm_operators/934raucw/
 ---
@@ -34,10 +34,11 @@ system_prompt = WhisperTranscriptionPrompt.generate_prompt(
     with_timestamps=False,
 )
 
-def __init__(self, 
-            vlm_serving: VLMServingABC, 
-            system_prompt: str = system_prompt,
-            )
+def __init__(
+    self, 
+    vlm_serving: VLMServingABC, 
+    system_prompt: str = system_prompt,
+)
 ```
 | Parameter | Default | 	Description |
 | :--- | :--- | :--- |
@@ -63,27 +64,24 @@ Parameters
 
 ```python
 from dataflow.operators.core_audio import PromptedAQAGenerator
-from dataflow.operators.conversations import Conversation2Message
 from dataflow.serving import LocalModelVLMServing_vllm
 from dataflow.utils.storage import FileStorage
 
 class AQAGenerator():
     def __init__(self):
         self.storage = FileStorage(
-            first_entry_file_name="./dataflow/example/audio_vqa/sample_data_local.jsonl",
+            first_entry_file_name="../example_data/audio_vqa/sample_data_local.jsonl",
             cache_path="./cache",
             file_name_prefix="audio_aqa",
             cache_type="jsonl",
         )
-        self.model_cache_dir = './dataflow_cache'
 
         self.vlm_serving = LocalModelVLMServing_vllm(
             hf_model_name_or_path="/path/to/your/Qwen2-Audio-7B-Instruct",
-            hf_cache_dir=self.model_cache_dir,
+            hf_cache_dir='./dataflow_cache',
             vllm_tensor_parallel_size=8,
             vllm_temperature=0.7,
             vllm_top_p=0.9,
-            vllm_max_tokens=512,
             vllm_gpu_memory_utilization=0.6
         )
 
@@ -114,10 +112,12 @@ if __name__ == "__main__":
 
 Example Input:
 ```jsonl
-{"audio": ["/path/to/your/audio/audio.wav"], "conversation": [{"from": "human", "value": "<audio>\nTranscribe the audio in English." }]}
+{"audio": ["../example_data/audio_aqa_pipeline/test_1.wav"], "conversation": [{"from": "human", "value": "Transcribe the audio into Chinese." }]}
+{"audio": ["../example_data/audio_aqa_pipeline/test_2.wav"], "conversation": [{"from": "human", "value": "Describe the sound in this audio clip." }]}
 ```
 
 Example Output:
 ```jsonl
-{"audio": ["/path/to/your/audio/audio.wav"], "conversation": [{"from": "human", "value": "<audio>\nTranscribe the audio in English." }], "answer": "He began a confused complaint against the wizard who had vanished behind the curtain on the left."}
+{"audio":["..\/example_data\/audio_aqa_pipeline\/test_1.wav"],"conversation":[{"from":"human","value":"Transcribe the audio into Chinese."}],"answer":"The audio states: '二十三家全国品牌企业市场份额已达到百分之二十三点三一'"}
+{"audio":["..\/example_data\/audio_aqa_pipeline\/test_2.wav"],"conversation":[{"from":"human","value":"Describe the sound in this audio clip."}],"answer":"The audio contains the sound of a machine turning on and off repeatedly."}
 ```

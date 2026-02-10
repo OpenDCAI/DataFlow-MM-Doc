@@ -23,12 +23,6 @@ export const MMOperators: ThemeNote = defineNoteConfig({
             prefix: 'image_understanding',
             items: [
                 {
-                    text: '安装',
-                    collapsed: false,
-                    prefix: '',
-                    items: ['install_image_understanding'],
-                },
-                {
                     text: "generate",
                     collapsed: false,
                     prefix: 'generate/',
@@ -96,12 +90,6 @@ export const MMOperators: ThemeNote = defineNoteConfig({
             prefix: 'video_understanding',
             items: [
                 {
-                    text: '安装',
-                    collapsed: false,
-                    prefix: '',
-                    items: ['install_video_understanding'],
-                },
-                {
                     text: "generate",
                     collapsed: false,
                     prefix: 'generate/',
@@ -109,7 +97,6 @@ export const MMOperators: ThemeNote = defineNoteConfig({
                         'video_caption',
                         'video_merged_caption',
                         'video_qa',
-                        'video_cotqa',
                         'video_clip'
                     ]
                 },
@@ -135,8 +122,10 @@ export const MMOperators: ThemeNote = defineNoteConfig({
                         'video_clip_filter',
                         'video_info_filter',
                         'video_scene_filter',
-                        'video_score_filter',
                         'video_frame_filter',
+                        'video_aesthetic_filter',
+                        'video_luminance_filter',
+                        'video_ocr_filter',
                     ]
                 },
             ],
@@ -154,12 +143,6 @@ export const MMOperators: ThemeNote = defineNoteConfig({
             //     'ctc_forced_aligner_eval',
             // ],
             items: [
-                {
-                    text: '安装',
-                    collapsed: false,
-                    prefix: '',
-                    items: ['install_audio_understanding'],
-                },
                 {
                     text: "generate",
                     collapsed: false,
@@ -192,18 +175,26 @@ export const MMOperators: ThemeNote = defineNoteConfig({
                     items: [
                         'merge_chunks',
                     ]
+                },
+                {
+                    text: "refine",
+                    collapsed: false,
+                    prefix: 'refine/',
+                    items: [
+                        'text_normalizer',
+                    ]
                 }
             ],
         },
-        {
-            text: 'Dataflow图像/视频生成',
-            collapsed: false,
-            icon: 'carbon:idea',
-            prefix: 'image_video_generation',
-            items: [
-                'install_image_video_generation',
-                'image_generation',
-            ],
-        },
+        // {
+        //     text: 'Dataflow图像/视频生成',
+        //     collapsed: false,
+        //     icon: 'carbon:idea',
+        //     prefix: 'image_video_generation',
+        //     items: [
+        //         'install_image_video_generation',
+        //         'image_generation',
+        //     ],
+        // },
     ]
 })

@@ -38,11 +38,13 @@ def run(
     input_gt_solution_key: str = "solution",
     input_question_type_key: str = "problem_type",
     output_reward_key: str = "reward"
-):
+) -> str:
     ...
 ```
 
 执行算子主逻辑：从 storage 读取模型输出、标准答案和问题类型，根据问题类型计算评分，并写回存储。
+
+**返回值:** `str` - 输出字段名（`output_reward_key` 的值）
 
 ## 🧾 `run` 参数说明
 

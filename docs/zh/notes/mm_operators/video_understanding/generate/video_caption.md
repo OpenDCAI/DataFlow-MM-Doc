@@ -41,12 +41,14 @@ def run(
     input_video_key: str = "video",
     input_conversation_key: str = "conversation",
     output_key: str = "caption"
-):
+) -> str:
     ...
 ```
 
 `run` 是算子主逻辑，执行视频描述生成任务：
 读取视频路径 → 构建提示词 → 调用VLM模型 → 生成文本描述 → 写入输出文件。
+
+**返回值:** 返回 `output_key` 字段名（字符串类型）。
 
 ## 🧾 `run` 参数说明
 
@@ -86,14 +88,14 @@ storage = FileStorage(
     file_name_prefix="video_caption",
     cache_type="json",
 )
-storage.step()
 
 # Step 3: 初始化并运行算子
 video_caption_generator = VideoToCaptionGenerator(
     vlm_serving=vlm_serving,
 )
 video_caption_generator.run(
-    storage=storage,
+    storage=storage.step(),
+    input_image_key="image",
     input_video_key="video",
     input_conversation_key="conversation",
     output_key="caption"

@@ -6,5 +6,11 @@ permalink: /en/mm_guide/install_image_understanding/
 ---
 
 # Installation
+```bash
+conda create -n Dataflow-MM python=3.12
+conda activate DataFlow-MM
 
-Please refer to: [Detailed Guide for Image Environment Installation](/en/mm_operators/install_image_understanding/)
+cd ./DataFlow-MM
+pip install -e .
+pip install -e ".[vllm]"
+```

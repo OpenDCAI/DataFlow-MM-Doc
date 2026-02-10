@@ -77,7 +77,6 @@ storage = FileStorage(
     file_name_prefix="video_clip",
     cache_type="json",
 )
-storage.step()
 
 # Step 2: Initialize and run operator
 video_clip_generator = VideoClipGenerator(
@@ -88,7 +87,7 @@ video_clip_generator = VideoClipGenerator(
     shorter_size=720,  # Scale shorter side to 720p
 )
 video_clip_generator.run(
-    storage=storage,
+    storage=storage.step(),
     video_clips_key="video_clip",
     output_key="video_info"
 )

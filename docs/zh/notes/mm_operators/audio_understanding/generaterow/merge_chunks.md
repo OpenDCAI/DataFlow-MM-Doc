@@ -1,35 +1,37 @@
 ---
-title: MergeChunksRowGenerator
+title: 时间戳切分合并算子
 createTime: 2025/10/14 15:41:18
 # icon: material-symbols:segment
 permalink: /zh/mm_operators/84xjbt9g/
 ---
 
 ## 📘-概述
-```MergeChunksRowGenerator``` 是一个按照语音活动区域合并音频片段的算子。
+```TimestampChunkRowGenerator``` 是一个按照时间戳切分或合并音频片段的算子。
 
 ## ```__init__```函数
 ```python
 def __init__(
     self, 
-    num_workers=1,
     dst_folder: str,
-    timestamp_type: Literal["frame", "time"] = "time",  # 手动指定类型
+    timestamp_unit: Literal["frame", "second"] = "second",
+    mode: Literal["merge", "split"] = "split",
     max_audio_duration: float = float('inf'),
-    hop_size_samples: int = 512,  # hop_size, 是样本点数量
+    hop_size_samples: int = 512,
     sampling_rate: int = 16000,
-    ):
+    num_workers: int = 1,
+):
 ```
 
 ## `init`参数说明
 | 参数 | 类型 | 默认值 | 描述 |
 | --- | --- | --- | --- |
-| `num_workers` | `int` | `1` | 并行处理的工作线程数 |
 | `dst_folder` | `str` | **必填** | 输出音频文件夹路径 |
-| `timestamp_type` | `Literal["frame", "time"]` | `"time"` | 语音活动时间戳的类型，`frame` 表示帧索引，`time` 表示时间戳 |
-| `max_audio_duration` | `float` | `float('inf')` | 最大音频时长，单位秒 |
-| `hop_size_samples` | `int` | `512` | 仅当 `timestamp_type="frame"` 时有效，用于把帧索引换算为秒。 |
+| `timestamp_unit` | `Literal["frame", "second"]` | `"second"` | 语音活动时间戳的类型，`frame` 表示帧索引，`second` 表示时间戳 |
+| `mode` | `Literal["merge", "split"]` | `"split"` | 选择仅根据时间戳或帧索引对音频进行切分或切分完进行合并, `split` 表示仅切分音频, `merge` 表示切分完音频后再合并(不会超过`max_audio_duration`) |
+| `max_audio_duration` | `float` | `float('inf')` | 音频合并最大音频时长限制，单位秒 |
+| `hop_size_samples` | `int` | `512` | 仅当 `timestamp_unit="frame"` 时有效，用于把帧索引换算为秒。 |
 | `sampling_rate` | `int` | `16000` | 音频采样率，单位赫兹 |
+| `num_workers` | `int` | `1` | 并行处理的工作线程数 |
 
 ## `run`函数
 ```python
@@ -37,7 +39,7 @@ def run(self,
     storage: DataFlowStorage,
     input_audio_key: str = "audio",
     input_timestamps_key: str = "timestamps",
-)
+):
 ```
 执行算子主逻辑，从存储中读取输入 DataFrame，按照语音时间戳进行拼接得到语音片段，保存到指定目录下。
 
@@ -58,16 +60,17 @@ from dataflow.operators.core_audio import MergeChunksRowGenerator
 class TestMergeChunksByTimestamps:
     def __init__(self):
         self.storage = FileStorage(
-            first_entry_file_name="./dataflow/example/merge_chunks/sample_data_local.jsonl",
+            first_entry_file_name="/path/to/your/cache/audio_voice_activity_detection_pipeline_step2.jsonl",
             cache_path="./cache",
-            file_name_prefix="merge_chunks_by_timestamps",
+            file_name_prefix="audio_voice_activity_detection_pipeline",
             cache_type="jsonl",
         )
 
         self.merger = MergeChunksRowGenerator(
-            num_workers=16,
+            num_workers=1,
             dst_folder="./cache",
-            timestamp_type="time", 
+            timestamp_unit="time", 
+            mode="split",
             max_audio_duration=30,
             hop_size_samples=512,
             sampling_rate=16000,
@@ -94,11 +97,28 @@ if __name__ == "__main__":
 
 示例输入:
 ```jsonl
-{"audio": ["./dataflow/example/silero_vad/test.wav"], "conversation": [{"from": "human", "value": "<audio>" }]}
+{"audio":["..\/example_data\/audio_voice_activity_detection_pipeline\/test.wav"],"conversation":[{"from":"human","value":""}],"timestamps":[{"start":0.0,"end":2.0},{"start":2.7,"end":4.7},{"start":5.0,"end":6.9},{"start":9.3,"end":13.3},{"start":13.5,"end":15.1},{"start":15.3,"end":15.9},{"start":16.3,"end":17.9},{"start":18.4,"end":19.6},{"start":20.3,"end":32.6},{"start":32.7,"end":35.6},{"start":35.7,"end":37.6},{"start":38.0,"end":38.9},{"start":39.9,"end":43.3},{"start":43.6,"end":44.6},{"start":45.0,"end":46.8},{"start":48.8,"end":50.0},{"start":51.1,"end":54.2},{"start":54.5,"end":57.4},{"start":57.5,"end":59.6}]}
 ```
 
 ```jsonl
-{"audio": ["cache\/test_1.wav"],"original_audio_path":".\/dataflow\/example\/silero_vad\/test.wav","conversation":[{"from":"human","value":"<audio>"}],"sequence_num":1}
-{"audio":["cache\/test_2.wav"],"original_audio_path":".\/dataflow\/example\/silero_vad\/test.wav","conversation":[{"from":"human","value":"<audio>"}],"sequence_num":2}
+{"audio":["cache\/test_1.wav"],"original_audio_path":"..\/example_data\/audio_voice_activity_detection_pipeline\/test.wav","sequence_num":1}
+{"audio":["cache\/test_2.wav"],"original_audio_path":"..\/example_data\/audio_voice_activity_detection_pipeline\/test.wav","sequence_num":2}
+{"audio":["cache\/test_3.wav"],"original_audio_path":"..\/example_data\/audio_voice_activity_detection_pipeline\/test.wav","sequence_num":3}
+{"audio":["cache\/test_4.wav"],"original_audio_path":"..\/example_data\/audio_voice_activity_detection_pipeline\/test.wav","sequence_num":4}
+{"audio":["cache\/test_5.wav"],"original_audio_path":"..\/example_data\/audio_voice_activity_detection_pipeline\/test.wav","sequence_num":5}
+{"audio":["cache\/test_6.wav"],"original_audio_path":"..\/example_data\/audio_voice_activity_detection_pipeline\/test.wav","sequence_num":6}
+{"audio":["cache\/test_7.wav"],"original_audio_path":"..\/example_data\/audio_voice_activity_detection_pipeline\/test.wav","sequence_num":7}
+{"audio":["cache\/test_8.wav"],"original_audio_path":"..\/example_data\/audio_voice_activity_detection_pipeline\/test.wav","sequence_num":8}
+{"audio":["cache\/test_9.wav"],"original_audio_path":"..\/example_data\/audio_voice_activity_detection_pipeline\/test.wav","sequence_num":9}
+{"audio":["cache\/test_10.wav"],"original_audio_path":"..\/example_data\/audio_voice_activity_detection_pipeline\/test.wav","sequence_num":10}
+{"audio":["cache\/test_11.wav"],"original_audio_path":"..\/example_data\/audio_voice_activity_detection_pipeline\/test.wav","sequence_num":11}
+{"audio":["cache\/test_12.wav"],"original_audio_path":"..\/example_data\/audio_voice_activity_detection_pipeline\/test.wav","sequence_num":12}
+{"audio":["cache\/test_13.wav"],"original_audio_path":"..\/example_data\/audio_voice_activity_detection_pipeline\/test.wav","sequence_num":13}
+{"audio":["cache\/test_14.wav"],"original_audio_path":"..\/example_data\/audio_voice_activity_detection_pipeline\/test.wav","sequence_num":14}
+{"audio":["cache\/test_15.wav"],"original_audio_path":"..\/example_data\/audio_voice_activity_detection_pipeline\/test.wav","sequence_num":15}
+{"audio":["cache\/test_16.wav"],"original_audio_path":"..\/example_data\/audio_voice_activity_detection_pipeline\/test.wav","sequence_num":16}
+{"audio":["cache\/test_17.wav"],"original_audio_path":"..\/example_data\/audio_voice_activity_detection_pipeline\/test.wav","sequence_num":17}
+{"audio":["cache\/test_18.wav"],"original_audio_path":"..\/example_data\/audio_voice_activity_detection_pipeline\/test.wav","sequence_num":18}
+{"audio":["cache\/test_19.wav"],"original_audio_path":"..\/example_data\/audio_voice_activity_detection_pipeline\/test.wav","sequence_num":19}
 ```
 在`dst_folder`内会出现音频文件。

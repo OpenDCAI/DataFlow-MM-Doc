@@ -35,11 +35,11 @@ cd run_dataflow_mm
 
 ### Step 2: Initialize DataFlow-MM
 ```bash
-dataflow init
+dataflowmm init
 ```
 You will see:
 ```bash
-run_dataflow_mm/pipelines/gpu_pipelines/video_qa_pipeline.py  
+run_dataflow_mm/playground/video_qa_pipeline.py  
 ```
 
 ### Step 3: Configure model path
@@ -61,8 +61,16 @@ self.vlm_serving = LocalModelVLMServing_vllm(
 
 ### Step 4: One-click run
 ```bash
-python pipelines/gpu_pipelines/video_qa_pipeline.py
+python playground/video_qa_pipeline.py
 ```
+
+::: tip API Version
+If you prefer to use an API service instead of a local model, you can use the API version of the pipeline:
+```bash
+python api_pipelines/video_qa_api_pipeline.py
+```
+The API version is used similarly to the local version. Simply configure the API key and service address. For details, see the configuration instructions in `api_pipelines/video_qa_api_pipeline.py`.
+:::
 
 You can adjust the generation strategy (whether to use video input when generating QA) based on your needs. Below we introduce each step in the pipeline and parameter configuration in detail.
 
@@ -104,14 +112,15 @@ self.storage = FileStorage(
 ]
 ```
 
-### 2. **Video Caption Generation (VideoToCaptionGenerator)**
+### 2. **Video Caption Generation (PromptedVQAGenerator)**
 
-The first step of the pipeline is to use the **Video Caption Generator** (`VideoToCaptionGenerator`) to generate detailed text descriptions for videos.
+The first step of the pipeline is to use the **Prompted VQA Generator** (`PromptedVQAGenerator`) combined with `VideoCaptionGeneratorPrompt` to generate detailed text descriptions for videos.
 
 **Functionality:**
 
 * Analyze video content using VLM models and generate descriptive text
 * Provide content foundation for subsequent QA generation
+* Use a prompt template to configure the format and style of generated content
 
 **Input:** Video file paths and conversation format data  
 **Output:** Generated video caption text (`caption` field)
@@ -119,20 +128,26 @@ The first step of the pipeline is to use the **Video Caption Generator** (`Video
 **Operator Initialization**:
 
 ```python
-self.video_to_caption_generator = VideoToCaptionGenerator(
-    vlm_serving=self.vlm_serving,
+from dataflow.prompts.video import VideoCaptionGeneratorPrompt
+
+self.prompt_template = VideoCaptionGeneratorPrompt()
+
+self.prompted_vqa_generator = PromptedVQAGenerator(
+    serving=self.vlm_serving,
+    system_prompt="You are a helpful assistant.",
+    prompt_template=self.prompt_template
 )
 ```
 
 **Operator Run**:
 
 ```python
-self.video_to_caption_generator.run(
+self.prompted_vqa_generator.run(
     storage=self.storage.step(),
     input_image_key="image",              # Input image field (optional)
     input_video_key="video",              # Input video field
     input_conversation_key="conversation", # Input conversation field
-    output_key="caption",                 # Output caption field
+    output_answer_key="caption",          # Output caption field
 )
 ```
 
@@ -205,18 +220,15 @@ The final output includes:
 An example pipeline demonstrating how to use VideoVQAGenerator for video QA generation:
 
 ```python
-from dataflow.operators.core_vision import VideoToCaptionGenerator, VideoCaptionToQAGenerator
-from dataflow.operators.conversations import Conversation2Message
+from dataflow.operators.core_vision import PromptedVQAGenerator, VideoCaptionToQAGenerator
 from dataflow.serving import LocalModelVLMServing_vllm
 from dataflow.utils.storage import FileStorage
+from dataflow.prompts.video import VideoCaptionGeneratorPrompt
 
 class VideoVQAGenerator():
-    def __init__(self, use_video_in_qa=True):
+    def __init__(self):
         """
-        Args:
-            use_video_in_qa: Whether to input video when generating QA.
-                            True: Use both caption and video to generate questions
-                            False: Use only caption to generate questions (no video input)
+        Initialize VideoVQAGenerator with default parameters.
         """
         self.storage = FileStorage(
             first_entry_file_name="./dataflow/example/video_caption/sample_data.json",
@@ -224,11 +236,10 @@ class VideoVQAGenerator():
             file_name_prefix="video_vqa",
             cache_type="json",
         )
-        self.model_cache_dir = './dataflow_cache'
 
         self.vlm_serving = LocalModelVLMServing_vllm(
             hf_model_name_or_path="Qwen/Qwen2.5-VL-7B-Instruct",
-            hf_cache_dir=self.model_cache_dir,
+            hf_cache_dir="./dataflow_cache",
             vllm_tensor_parallel_size=1,
             vllm_temperature=0.7,
             vllm_top_p=0.9, 
@@ -237,23 +248,30 @@ class VideoVQAGenerator():
             vllm_gpu_memory_utilization=0.9
         )
 
-        self.video_to_caption_generator = VideoToCaptionGenerator(
-            vlm_serving = self.vlm_serving,
+        self.prompt_template = VideoCaptionGeneratorPrompt()
+        
+        self.prompted_vqa_generator = PromptedVQAGenerator(
+            serving=self.vlm_serving,
+            system_prompt="You are a helpful assistant.",
+            prompt_template=self.prompt_template
         )
+        
         self.videocaption_to_qa_generator = VideoCaptionToQAGenerator(
-            vlm_serving = self.vlm_serving,
-            use_video_input = use_video_in_qa,  # Control video input usage
+            vlm_serving=self.vlm_serving,
+            use_video_input=True,  # Control video input usage
         )
 
     def forward(self):
-        self.video_to_caption_generator.run(
-            storage = self.storage.step(),
+        # Step 1: Generate video captions using PromptedVQAGenerator
+        self.prompted_vqa_generator.run(
+            storage=self.storage.step(),
             input_image_key="image",
             input_video_key="video",
             input_conversation_key="conversation",
-            output_key="caption",
+            output_answer_key="caption",
         )
         
+        # Step 2: Generate QA from captions
         self.videocaption_to_qa_generator.run(
             storage = self.storage.step(),
             input_image_key="image",
@@ -262,12 +280,7 @@ class VideoVQAGenerator():
             output_key="qa",
         )
 
-if __name__ == "__main__":    
-    # Use video input to generate QA (default behavior)
-    model = VideoVQAGenerator(use_video_in_qa=True)
-    
-    # Don't use video input, generate QA based on caption only
-    # model = VideoVQAGenerator(use_video_in_qa=False)
-    
+if __name__ == "__main__":
+    model = VideoVQAGenerator()
     model.forward()
 ```

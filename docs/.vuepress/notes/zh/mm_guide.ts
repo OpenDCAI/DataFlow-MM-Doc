@@ -54,8 +54,8 @@ export const MMGuide: ThemeNote = defineNoteConfig({
             prefix: 'audio_understanding',
             items: [
                 'install_audio_understanding',
-                'audio_caption',
-                'whisper_asr',
+                'audio_qa',
+                'audio_voice_activity_detection',
                 'audio_asr_pipeline',
             ],
         },

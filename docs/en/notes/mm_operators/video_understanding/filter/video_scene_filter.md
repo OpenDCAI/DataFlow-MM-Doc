@@ -63,7 +63,7 @@ def run(
     output_key: Optional[str] = None,
     overlap: Optional[bool] = None,
     use_fixed_interval: Optional[bool] = None
-):
+) -> None:
     ...
 ```
 
@@ -84,11 +84,17 @@ Executes the main logic: reads data from storage, detects scene transition point
 
 ## 🧠 Example Usage
 
+::: tip Complete Example Code
+The complete pipeline example code is located at: `playground/video_scene_detect_pipeline.py`
+
+After initializing with `dataflowmm init`, you can find the complete runnable example at this path.
+:::
+
 ```python
 from dataflow.utils.storage import FileStorage
-from dataflow.operators.core_vision import VideoSceneFilter
+from dataflow.operators.core_vision import VideoInfoFilter, VideoSceneFilter
 
-# Step 1: Prepare FileStorage (at least contains video column, optionally video_info)
+# Step 1: Prepare FileStorage (at least contains video column)
 storage = FileStorage(
     first_entry_file_name="data/video_scene_input.jsonl",
     cache_path="./cache_local",
@@ -96,8 +102,19 @@ storage = FileStorage(
     cache_type="jsonl"
 )
 
-# Step 2: Initialize operator
-filter_op = VideoSceneFilter(
+# Step 2: Extract video information (Recommended: get fps and other info first)
+video_info_filter = VideoInfoFilter(
+    backend="opencv",
+    ext=False
+)
+video_info_filter.run(
+    storage=storage.step(),
+    input_video_key="video",
+    output_key="video_info"
+)
+
+# Step 3: Initialize scene detection operator
+scene_filter = VideoSceneFilter(
     frame_skip=0,
     start_remove_sec=0.0,
     end_remove_sec=0.0,
@@ -105,17 +122,17 @@ filter_op = VideoSceneFilter(
     max_seconds=15.0,
     disable_parallel=False,
     num_workers=16,
-    input_video_key="video",
-    video_info_key="video_info",
-    output_key="video_scene",
     use_adaptive_detector=True,
     overlap=False,
     use_fixed_interval=False
 )
 
-# Step 3: Execute scene detection
-filter_op.run(
-    storage=storage.step()
+# Step 4: Execute scene detection (using video_info from Step 2)
+scene_filter.run(
+    storage=storage.step(),
+    input_video_key="video",
+    video_info_key="video_info",
+    output_key="video_scene"
 )
 ```
 
