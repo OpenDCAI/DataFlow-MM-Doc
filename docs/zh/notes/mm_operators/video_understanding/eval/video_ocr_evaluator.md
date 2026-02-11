@@ -23,7 +23,9 @@ def __init__(
     num_workers: int = 4,
     gpu_num: int = 0,
     init_distributed: bool = False,
-    output_key: str = "video_clips"
+    output_key: str = "video_clips",
+    det_model_dir: str = None,
+    rec_model_dir: str = None
 ):
     ...
 ```
@@ -41,6 +43,8 @@ def __init__(
 | `gpu_num`          | `int`  | `0`                  | GPU ID（0+ 表示使用GPU，-1 表示CPU） |
 | `init_distributed` | `bool` | `False`              | 是否初始化分布式训练                |
 | `output_key`       | `str`  | `"video_clips"`      | 输出字段名（更新后的视频片段）           |
+| `det_model_dir`    | `str`  | `None`               | PaddleOCR 检测模型目录路径（可选）    |
+| `rec_model_dir`    | `str`  | `None`               | PaddleOCR 识别模型目录路径（可选）    |
 
 ---
 
@@ -58,7 +62,9 @@ def run(
     num_workers: Optional[int] = None,
     gpu_num: Optional[int] = None,
     init_distributed: Optional[bool] = None,
-    output_key: Optional[str] = None
+    output_key: Optional[str] = None,
+    det_model_dir: Optional[str] = None,
+    rec_model_dir: Optional[str] = None
 ):
     ...
 ```

@@ -42,13 +42,16 @@ def run(
     input_image_key: str = None,
     input_video_key: str = None,
     input_conversation_key: str = "conversation",
+    input_caption_key: str = "caption",
     output_key: str = "answer",
-):
+) -> str:
     ...
 ```
 
 `run` is the main logic for video QA generation:
 Read caption text → Build QA generation prompt → Call VLM model → Generate QA pairs → Write to output.
+
+**Returns:** The `output_key` field name (string type).
 
 ## 🧾 `run` Parameters
 
@@ -58,6 +61,7 @@ Read caption text → Build QA generation prompt → Call VLM model → Generate
 | `input_image_key`        | `str`             | `None`           | Field name for images in input (optional) |
 | `input_video_key`        | `str`             | `None`           | Field name for videos in input (optional) |
 | `input_conversation_key` | `str`             | `"conversation"` | Field name for conversations in input |
+| `input_caption_key`      | `str`             | `"caption"`      | Field name for captions in input     |
 | `output_key`             | `str`             | `"answer"`       | Field name for generated QA output   |
 
 ---
@@ -88,7 +92,6 @@ storage = FileStorage(
     file_name_prefix="video_qa",
     cache_type="json",
 )
-storage.step()
 
 # Step 3: Initialize and run operator
 qa_generator = VideoCaptionToQAGenerator(
@@ -96,9 +99,10 @@ qa_generator = VideoCaptionToQAGenerator(
     use_video_input=True,  # Use video input
 )
 qa_generator.run(
-    storage=storage,
+    storage=storage.step(),
     input_video_key="video",
     input_conversation_key="conversation",
+    input_caption_key="caption",
     output_key="answer"
 )
 ```
@@ -216,5 +220,4 @@ qa_generator.run(storage.step())
 - **Related Operators:**
   - [VideoToCaptionGenerator](./video_caption.md) - Video Caption Generation
   - [VideoMergedCaptionGenerator](./video_merged_caption.md) - Video Merged Caption Generation
-  - [VideoCOTQAGenerator](./video_cotqa.md) - Video Chain-of-Thought QA Generation
 

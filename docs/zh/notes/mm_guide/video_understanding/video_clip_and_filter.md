@@ -22,13 +22,12 @@ icon: carbon:video-filled
 
 1. **视频信息提取**：提取视频的基础信息（分辨率、帧率、时长等）。
 2. **场景检测**：基于场景变化智能分割视频。
-3. **片段元数据生成**：为每个场景片段生成元数据。
+3. **片段元数据生成与基础过滤**：为每个场景片段生成元数据并进行基础过滤（帧数、FPS、分辨率）。
 4. **关键帧提取**：从每个片段中提取代表性帧。
-5. **美学评分**：评估视频片段的美学质量。
-6. **亮度评估**：分析视频片段的亮度分布。
-7. **OCR分析**：检测视频中的文字内容。
-8. **质量过滤**：基于多维度评分过滤低质量片段。
-9. **视频切割保存**：保存高质量的视频片段。
+5. **美学评分与过滤**：评估视频片段的美学质量并过滤低分片段。
+6. **亮度评估与过滤**：分析视频片段的亮度分布并过滤异常亮度片段。
+7. **OCR分析与过滤**：检测视频中的文字内容并过滤文字过多的片段。
+8. **视频切割保存**：保存高质量的视频片段。
 
 ---
 
@@ -42,36 +41,32 @@ cd run_dataflow_mm
 
 ### 第二步：初始化 DataFlow-MM
 ```bash
-dataflow init
+dataflowmm init
 ```
 这时你会看到：
 ```bash
-run_dataflow_mm/pipelines/gpu_pipelines/video_clip_and_filter_pipeline.py  
+run_dataflow_mm/gpu_pipelines/video_clip_and_filter_pipeline.py  
 ```
 
-### 第三步：配置模型路径和过滤参数
+### 第三步：配置模型路径
 
-在 `video_clip_and_filter_pipeline.py` 中配置美学评分模型和过滤阈值：
+在 `video_clip_and_filter_pipeline.py` 中配置必要的模型路径。打开文件后，你需要修改以下路径：
 
 ```python
-generator = VideoFilteredClipGenerator(
-    clip_model="/path/to/ViT-L-14.pt",              # CLIP 模型路径
-    mlp_checkpoint="/path/to/sac+logos+ava1-l14-linearMSE.pth",  # MLP 检查点
-    aes_min=4,                                       # 最低美学分数
-    ocr_max=0.3,                                     # 最高 OCR 比例
-    lum_min=20,                                      # 最低亮度
-    lum_max=140,                                     # 最高亮度
-    motion_min=2,                                    # 最低运动分数
-    motion_max=14,                                   # 最高运动分数
-    strict_mode=False,                               # 严格模式
-    seed=42,                                         # 随机种子
-    video_save_dir="./cache/video_clips",           # 视频保存目录
-)
+# 在 VideoAestheticFilter 中配置美学评分模型
+clip_model="/path/to/ViT-L-14.pt",  # 从 https://openaipublic.azureedge.net/clip/models/.../ViT-L-14.pt 下载
+mlp_checkpoint="/path/to/sac+logos+ava1-l14-linearMSE.pth",  # 从 https://github.com/christophschuhmann/improved-aesthetic-predictor 下载
+
+# 在 VideoOCRFilter 中配置 OCR 模型
+det_model_dir="/path/to/PP-OCRv5_server_det",  # PaddleOCR 检测模型
+rec_model_dir="/path/to/PP-OCRv5_server_rec",  # PaddleOCR 识别模型
 ```
+
+你也可以根据需要调整各个算子的过滤参数，如美学阈值 `aes_min`、亮度范围 `lum_min/lum_max`、OCR 比例 `ocr_max` 等。
 
 ### 第四步：一键运行
 ```bash
-python pipelines/gpu_pipelines/video_clip_and_filter_pipeline.py
+python gpu_pipelines/video_clip_and_filter_pipeline.py
 ```
 
 此外，你可以根据自己的需求调整过滤参数。接下来，我们会详细介绍流水线中的各个步骤和参数配置。
@@ -106,9 +101,9 @@ storage = FileStorage(
 ]
 ```
 
-### 2. **视频处理流水线（VideoFilteredClipGenerator）**
+### 2. **视频处理流水线**
 
-流程的核心是 **VideoFilteredClipGenerator** 算子，它整合了9个处理步骤。
+它整合了8个处理步骤。
 
 #### 步骤 1：视频信息提取（VideoInfoFilter）
 
@@ -145,16 +140,23 @@ self.video_scene_filter = VideoSceneFilter(
 )
 ```
 
-#### 步骤 3：片段元数据生成（VideoClipFilter）
+#### 步骤 3：片段元数据生成与基础过滤（VideoClipFilter）
 
 **功能：**
 * 为每个场景片段生成详细的元数据信息
+* 基于基础属性过滤片段（帧数、FPS、分辨率）
 
 **输入**：视频信息和场景信息  
 **输出**：片段元数据
 
 ```python
-self.video_clip_filter = VideoClipFilter()
+self.video_clip_filter = VideoClipFilter(
+    frames_min=None,           # 最小帧数
+    frames_max=None,           # 最大帧数
+    fps_min=None,              # 最小帧率
+    fps_max=None,              # 最大帧率
+    resolution_max=None,       # 最大分辨率
+)
 ```
 
 #### 步骤 4：关键帧提取（VideoFrameFilter）
@@ -171,85 +173,62 @@ self.video_frame_filter = VideoFrameFilter(
 )
 ```
 
-#### 步骤 5：美学评分（VideoAestheticEvaluator）
+#### 步骤 5：美学评分与过滤（VideoAestheticFilter）
 
 **功能：**
 * 使用 CLIP + MLP 模型评估视频片段的美学质量
+* 自动过滤低于阈值的片段
 * 分数范围通常为 0-10
 
 **输入**：提取的帧图像  
-**输出**：美学分数
+**输出**：美学分数和过滤后的片段
 
 ```python
-self.video_aesthetic_evaluator = VideoAestheticEvaluator(
+self.video_aesthetic_filter = VideoAestheticFilter(
     figure_root="./cache/extract_frames",
     clip_model="/path/to/ViT-L-14.pt",
     mlp_checkpoint="/path/to/sac+logos+ava1-l14-linearMSE.pth",
+    aes_min=4,  # 最低美学分数阈值
 )
 ```
 
-#### 步骤 6：亮度评估（VideoLuminanceEvaluator）
+#### 步骤 6：亮度评估与过滤（VideoLuminanceFilter）
 
 **功能：**
 * 计算视频片段的平均亮度
-* 过滤过暗或过亮的视频
+* 自动过滤过暗或过亮的视频
 
 **输入**：提取的帧图像  
-**输出**：亮度统计信息
+**输出**：亮度统计信息和过滤后的片段
 
 ```python
-self.video_luminance_evaluator = VideoLuminanceEvaluator(
+self.video_luminance_filter = VideoLuminanceFilter(
     figure_root="./cache/extract_frames",
+    lum_min=20,   # 最低亮度阈值
+    lum_max=140,  # 最高亮度阈值
 )
 ```
 
-#### 步骤 7：OCR 分析（VideoOCREvaluator）
+#### 步骤 7：OCR 分析与过滤（VideoOCRFilter）
 
 **功能：**
 * 检测视频中的文字内容比例
-* 可用于过滤含有大量文字的视频（如字幕、UI等）
+* 自动过滤含有大量文字的视频（如字幕、UI等）
 
 **输入**：提取的帧图像  
-**输出**：OCR 分数（文字占比）
+**输出**：OCR 分数（文字占比）和过滤后的片段
 
 ```python
-self.video_ocr_evaluator = VideoOCREvaluator(
+self.video_ocr_filter = VideoOCRFilter(
     figure_root="./cache/extract_frames",
+    det_model_dir="/path/to/PP-OCRv5_server_det",  # OCR 检测模型
+    rec_model_dir="/path/to/PP-OCRv5_server_rec",  # OCR 识别模型
+    ocr_min=None,   # 最低 OCR 比例（可选）
+    ocr_max=0.3,    # 最高 OCR 比例阈值
 )
 ```
 
-#### 步骤 8：质量过滤（VideoScoreFilter）
-
-**功能：**
-* 基于多维度评分过滤低质量片段
-* 支持美学、亮度、OCR、运动等多种过滤条件
-
-**输入**：所有评分数据  
-**输出**：过滤后的片段列表
-
-```python
-self.video_score_filter = VideoScoreFilter(
-    frames_min=None,           # 最小帧数
-    frames_max=None,           # 最大帧数
-    fps_min=None,              # 最小帧率
-    fps_max=None,              # 最大帧率
-    resolution_max=None,       # 最大分辨率
-    aes_min=4,                 # 最低美学分数
-    ocr_min=None,              # 最低 OCR 分数
-    ocr_max=0.3,               # 最高 OCR 分数
-    lum_min=20,                # 最低亮度
-    lum_max=140,               # 最高亮度
-    motion_min=2,              # 最低运动分数
-    motion_max=14,             # 最高运动分数
-    flow_min=None,             # 最低光流分数
-    flow_max=None,             # 最高光流分数
-    blur_max=None,             # 最高模糊度
-    strict_mode=False,         # 严格模式
-    seed=42,                   # 随机种子
-)
-```
-
-#### 步骤 9：视频切割保存（VideoClipGenerator）
+#### 步骤 8：视频切割保存（VideoClipGenerator）
 
 **功能：**
 * 根据过滤后的片段信息切割并保存视频
@@ -312,99 +291,69 @@ self.video_clip_generator = VideoClipGenerator(
 以下给出示例流水线，展示如何使用 VideoFilteredClipGenerator 进行视频分割与过滤。
 
 ```python
+from dataflow.core.Operator import OperatorABC
+from dataflow.utils.storage import FileStorage
 from dataflow.operators.core_vision import VideoInfoFilter
 from dataflow.operators.core_vision import VideoSceneFilter
 from dataflow.operators.core_vision import VideoClipFilter
 from dataflow.operators.core_vision import VideoFrameFilter
-from dataflow.operators.core_vision import VideoAestheticEvaluator
-from dataflow.operators.core_vision import VideoLuminanceEvaluator
-from dataflow.operators.core_vision import VideoOCREvaluator
-from dataflow.operators.core_vision import VideoScoreFilter
+from dataflow.operators.core_vision import VideoAestheticFilter
+from dataflow.operators.core_vision import VideoLuminanceFilter
+from dataflow.operators.core_vision import VideoOCRFilter
 from dataflow.operators.core_vision import VideoClipGenerator
-from dataflow.core.Operator import OperatorABC
-from dataflow.utils.storage import FileStorage
 
 class VideoFilteredClipGenerator(OperatorABC):
-    def __init__(
-        self,
-        backend="opencv",
-        ext=False,
-        frame_skip=0,
-        start_remove_sec=0.0,
-        end_remove_sec=0.0,
-        min_seconds=2.0,
-        max_seconds=15.0,
-        frame_output_dir="./cache/extract_frames",
-        clip_model="/path/to/ViT-L-14.pt",
-        mlp_checkpoint="/path/to/sac+logos+ava1-l14-linearMSE.pth",
-        frames_min=None,
-        frames_max=None,
-        fps_min=None,
-        fps_max=None,
-        resolution_max=None,
-        aes_min=4,
-        ocr_min=None,
-        ocr_max=0.3,
-        lum_min=20,
-        lum_max=140,
-        motion_min=2,
-        motion_max=14,
-        flow_min=None,
-        flow_max=None,
-        blur_max=None,
-        strict_mode=False,
-        seed=42,
-        video_save_dir="./cache/video_clips",
-    ):
+    """
+    完整的视频处理流水线算子，整合了所有过滤和生成步骤。
+    """
+    
+    def __init__(self):
+        """
+        使用默认参数初始化 VideoFilteredClipGenerator 算子。
+        """
         # 初始化所有子算子
         self.video_info_filter = VideoInfoFilter(
-            backend=backend,
-            ext=ext,
+            backend="opencv",
+            ext=False,
         )
         self.video_scene_filter = VideoSceneFilter(
-            frame_skip=frame_skip,
-            start_remove_sec=start_remove_sec,
-            end_remove_sec=end_remove_sec,
-            min_seconds=min_seconds,
-            max_seconds=max_seconds,
+            frame_skip=0,
+            start_remove_sec=0.0,
+            end_remove_sec=0.0,
+            min_seconds=2.0,
+            max_seconds=15.0,
             disable_parallel=True,
         )
-        self.video_clip_filter = VideoClipFilter()
+        self.video_clip_filter = VideoClipFilter(
+            frames_min=None,
+            frames_max=None,
+            fps_min=None,
+            fps_max=None,
+            resolution_max=None,
+        )
         self.video_frame_filter = VideoFrameFilter(
-            output_dir=frame_output_dir,
+            output_dir="./cache/extract_frames",
         )
-        self.video_aesthetic_evaluator = VideoAestheticEvaluator(
-            figure_root=frame_output_dir,
-            clip_model=clip_model,
-            mlp_checkpoint=mlp_checkpoint,
+        self.video_aesthetic_filter = VideoAestheticFilter(
+            figure_root="./cache/extract_frames",
+            clip_model="/path/to/ViT-L-14.pt",
+            mlp_checkpoint="/path/to/sac+logos+ava1-l14-linearMSE.pth",
+            aes_min=4,
         )
-        self.video_luminance_evaluator = VideoLuminanceEvaluator(
-            figure_root=frame_output_dir,
+        self.video_luminance_filter = VideoLuminanceFilter(
+            figure_root="./cache/extract_frames",
+            lum_min=20,
+            lum_max=140,
         )
-        self.video_ocr_evaluator = VideoOCREvaluator(
-            figure_root=frame_output_dir,
-        )
-        self.video_score_filter = VideoScoreFilter(
-            frames_min=frames_min,
-            frames_max=frames_max,
-            fps_min=fps_min,
-            fps_max=fps_max,
-            resolution_max=resolution_max,
-            aes_min=aes_min,
-            ocr_min=ocr_min,
-            ocr_max=ocr_max,
-            lum_min=lum_min,
-            lum_max=lum_max,
-            motion_min=motion_min,
-            motion_max=motion_max,
-            flow_min=flow_min,
-            flow_max=flow_max,
-            blur_max=blur_max,
-            strict_mode=strict_mode,
-            seed=seed,
+        self.video_ocr_filter = VideoOCRFilter(
+            figure_root="./cache/extract_frames",
+            det_model_dir="/path/to/PP-OCRv5_server_det",
+            rec_model_dir="/path/to/PP-OCRv5_server_rec",
+            ocr_min=None,
+            ocr_max=0.3,
         )
         self.video_clip_generator = VideoClipGenerator(
-            video_save_dir=video_save_dir,
+            video_save_dir="./cache/video_clips",
         )
     
     def run(
@@ -413,6 +362,18 @@ class VideoFilteredClipGenerator(OperatorABC):
         input_video_key="video",
         output_key="video",
     ):
+        """
+        执行完整的视频处理流水线。
+        
+        Args:
+            storage: DataFlow 存储对象
+            input_video_key: 输入视频路径字段名（默认：'video'）
+            output_key: 输出视频路径字段名（默认：'video'）
+            
+        Returns:
+            str: 输出键名
+        """
+        
         # 步骤 1: 提取视频信息
         self.video_info_filter.run(
             storage=storage.step(),
@@ -428,7 +389,7 @@ class VideoFilteredClipGenerator(OperatorABC):
             output_key="video_scene",
         )
         
-        # 步骤 3: 生成片段元数据
+        # 步骤 3: 生成片段元数据并基础过滤
         self.video_clip_filter.run(
             storage=storage.step(),
             input_video_key=input_video_key,
@@ -446,39 +407,31 @@ class VideoFilteredClipGenerator(OperatorABC):
             output_key="video_frame_export",
         )
         
-        # 步骤 5: 计算美学评分
-        self.video_aesthetic_evaluator.run(
+        # 步骤 5: 美学评分与过滤
+        self.video_aesthetic_filter.run(
             storage=storage.step(),
             input_video_key=input_video_key,
             video_clips_key="video_clip",
             output_key="video_clip",
         )
         
-        # 步骤 6: 计算亮度统计
-        self.video_luminance_evaluator.run(
+        # 步骤 6: 亮度评估与过滤
+        self.video_luminance_filter.run(
             storage=storage.step(),
             input_video_key=input_video_key,
             video_clips_key="video_clip",
             output_key="video_clip",
         )
         
-        # 步骤 7: 计算 OCR 分数
-        self.video_ocr_evaluator.run(
+        # 步骤 7: OCR 分析与过滤
+        self.video_ocr_filter.run(
             storage=storage.step(),
             input_video_key=input_video_key,
             video_clips_key="video_clip",
             output_key="video_clip",
         )
         
-        # 步骤 8: 基于分数过滤
-        self.video_score_filter.run(
-            storage=storage.step(),
-            input_video_key=input_video_key,
-            video_clips_key="video_clip",
-            output_key="video_clip",
-        )
-        
-        # 步骤 9: 切割并保存视频
+        # 步骤 8: 切割并保存视频
         self.video_clip_generator.run(
             storage=storage.step(),
             video_clips_key="video_clip",
@@ -488,6 +441,7 @@ class VideoFilteredClipGenerator(OperatorABC):
         return output_key
 
 if __name__ == "__main__":
+    # 测试算子
     storage = FileStorage(
         first_entry_file_name="./dataflow/example/video_split/sample_data.json",
         cache_path="./cache",
@@ -495,19 +449,7 @@ if __name__ == "__main__":
         cache_type="json",
     )
     
-    generator = VideoFilteredClipGenerator(
-        clip_model="/path/to/ViT-L-14.pt",
-        mlp_checkpoint="/path/to/sac+logos+ava1-l14-linearMSE.pth",
-        aes_min=4,
-        ocr_max=0.3,
-        lum_min=20,
-        lum_max=140,
-        motion_min=2,
-        motion_max=14,
-        strict_mode=False,
-        seed=42,
-        video_save_dir="./cache/video_clips",
-    )
+    generator = VideoFilteredClipGenerator()
     
     generator.run(
         storage=storage,

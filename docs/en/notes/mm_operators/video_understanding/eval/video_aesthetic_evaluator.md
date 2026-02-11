@@ -48,7 +48,29 @@ def __init__(
 
 ## ⚡ `run` Function
 
-All parameters are optional and override initialization parameters.
+```python
+def run(
+    self,
+    storage: DataFlowStorage,
+    figure_root: Optional[str] = None,
+    input_video_key: Optional[str] = None,
+    video_clips_key: Optional[str] = None,
+    clip_model: Optional[str] = None,
+    mlp_checkpoint: Optional[str] = None,
+    load_num: Optional[int] = None,
+    batch_size: Optional[int] = None,
+    num_workers: Optional[int] = None,
+    init_distributed: Optional[bool] = None,
+    output_key: Optional[str] = None
+):
+    ...
+```
+
+Executes the main logic: reads dataframe and extracted video frames from storage, computes aesthetic scores for each clip using CLIP + MLP, and writes back to storage.
+
+## 🧾 `run` Parameters
+
+All parameters are optional and override initialization parameters. Parameter descriptions are the same as in `__init__`.
 
 ---
 
@@ -58,6 +80,8 @@ All parameters are optional and override initialization parameters.
 from dataflow.utils.storage import FileStorage
 from dataflow.operators.core_vision import VideoAestheticEvaluator
 
+# Step 1: Prepare FileStorage (needs video, video_clips columns)
+# Note: VideoFrameFilter must be run first to extract frames
 storage = FileStorage(
     first_entry_file_name="data/video_aesthetic_input.jsonl",
     cache_path="./cache_local",
@@ -65,15 +89,23 @@ storage = FileStorage(
     cache_type="jsonl"
 )
 
+# Step 2: Initialize operator
 evaluator = VideoAestheticEvaluator(
     figure_root="./cache/extract_frames",
+    input_video_key="video",
+    video_clips_key="video_clips",
     clip_model="/path/to/ViT-L-14.pt",
     mlp_checkpoint="/path/to/sac+logos+ava1-l14-linearMSE.pth",
     load_num=3,
-    batch_size=64
+    batch_size=64,
+    num_workers=4,
+    init_distributed=False
 )
 
-evaluator.run(storage=storage.step())
+# Step 3: Execute evaluation
+evaluator.run(
+    storage=storage.step()
+)
 ```
 
 ---
@@ -88,6 +120,43 @@ evaluator.run(storage=storage.step())
 | Field              | Type    | Description                             |
 | :----------------- | :------ | :-------------------------------------- |
 | `aesthetic_score`  | `float` | Aesthetic score (higher means better quality) |
+
+Example Input:
+
+```jsonl
+{
+  "video": ["./test/video1.mp4"],
+  "video_clips": {
+    "clips": [
+      {
+        "id": "video1_0",
+        "frame_start": 0,
+        "frame_end": 150,
+        "num_frames": 150
+      }
+    ]
+  }
+}
+```
+
+Example Output:
+
+```jsonl
+{
+  "video": ["./test/video1.mp4"],
+  "video_clips": {
+    "clips": [
+      {
+        "id": "video1_0",
+        "frame_start": 0,
+        "frame_end": 150,
+        "num_frames": 150,
+        "aesthetic_score": 5.8
+      }
+    ]
+  }
+}
+```
 
 ---
 

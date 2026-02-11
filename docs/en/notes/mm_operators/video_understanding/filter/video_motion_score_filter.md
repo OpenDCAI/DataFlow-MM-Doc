@@ -51,11 +51,13 @@ def run(
     self,
     storage: DataFlowStorage,
     video_key: str = "video_path"
-):
+) -> list[str]:
     ...
 ```
 
 Executes the main logic: reads data from storage, calculates video motion scores for each row, retains only samples with motion scores within the specified range, and writes back to storage.
+
+**Returns:** `list[str]` - List of output field names, containing `["video_motion_score", "passed_filter"]`
 
 ## 🧾 `run` Parameters
 
