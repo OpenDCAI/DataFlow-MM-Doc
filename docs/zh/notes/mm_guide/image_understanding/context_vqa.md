@@ -1,7 +1,7 @@
 ---
 title: ContextVQA 多模态问答数据生成流水线
 icon: mdi:image-text
-createTime: 2025/06/16 14:30:00
+createTime: 2026/01/24 16:37:37
 permalink: /zh/mm_guide/contextvqa_pipeline/
 ---
 ## 1. 概述
@@ -24,36 +24,41 @@ permalink: /zh/mm_guide/contextvqa_pipeline/
 
 ## 2. 快速开始
 
-### 第一步：准备工作目录
-
+### 第一步：创建新的 DataFlow 工作文件夹
 ```bash
-mkdir run_context_vqa
-cd run_context_vqa
-
+mkdir run_dataflow_mm
+cd run_dataflow_mm
 ```
 
-### 第二步：准备脚本
-
-将下文“流水线示例”中的代码保存为 `context_vqa_pipeline.py`。
-
-### 第三步：配置运行参数
-
-该流水线支持命令行参数配置。你可以直接通过命令行指定模型路径和输入文件：
-
+### 第二步：初始化 DataFlow-MM
 ```bash
-# 确保安装了相关依赖
-pip install open-dataflow vllm
+dataflow init
+```
+这时你会看到：
+```bash
+gpu_pipelines/context_vqa.py  
+```
 
+### 第三步：配置模型路径
+
+在 `context_vqa.py` 中配置 VLM 模型路径和示例数据
+
+```python
+parser.add_argument("--model_path", default="Qwen/Qwen2.5-VL-3B-Instruct") # 修改为你的模型路径
+parser.add_argument("--hf_cache_dir", default="~/.cache/huggingface")
+parser.add_argument("--download_dir", default="./ckpt")
+parser.add_argument("--device", choices=["cuda", "cpu", "mps"], default="cuda")
+
+parser.add_argument("--images_file", default="dataflow/example/image_to_text_pipeline/capsbench_captions.json") # 修改为你的数据地址，我们提供示例数据在在run_dataflow_mm/example_data/image_to_text_pipeline/capsbench_captions.json，具体里面的图片可以从json中"source"来源下载
+parser.add_argument("--cache_path", default="./cache_local")
+parser.add_argument("--file_name_prefix", default="context_vqa")
+parser.add_argument("--cache_type", default="json")
 ```
 
 ### 第四步：一键运行
 
 ```bash
-python context_vqa_pipeline.py \
-  --model_path "Qwen/Qwen2.5-VL-3B-Instruct" \
-  --images_file "path/to/your/images.jsonl" \
-  --cache_path "./cache_local"
-
+python gpu_pipelines/context_vqa.py
 ```
 
 ---
@@ -71,20 +76,11 @@ python context_vqa_pipeline.py \
 
 **输入数据示例**：
 
-```json
-[
-    {
-        "id": 1,
-        "image": "./images/landmark.jpg"
-    },
-    {
-        "id": 2,
-        "image": "./images/animal.jpg"
-    }
-]
-
+```jsonl
+{"id": 1, "image": "./images/landmark.jpg"}
+{"id": 2, "image": "./images/animal.jpg"}
 ```
-
+示例图片可以在`https://huggingface.co/datasets/OpenDCAI/dataflow-demo-image/tree/main/capsbench_images`中找到；此外我们已经合成了20w高质量context vqa数据供社区使用体验，在https://huggingface.co/datasets/OpenDCAI/dataflow-mm-context_vqa中。
 ### 2. **核心算子逻辑**
 
 该流水线通过串联两个核心算子来完成任务：
