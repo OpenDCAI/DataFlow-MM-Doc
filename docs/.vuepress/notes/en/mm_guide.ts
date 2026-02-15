@@ -65,7 +65,22 @@ export const MMGuide: ThemeNote = defineNoteConfig({
             prefix: 'image_video_generation',
             items: [
                 'install_image_video_generation',
-                'image_generation',
+                {
+                    text: 'Image Generation',
+                    collapsed: false,
+                    items: [
+                        'image_generation_api',
+                        'image_generation_gpu',
+                    ],
+                },
+                {
+                    text: 'Image Editing',
+                    collapsed: false,
+                    items: [
+                        'image_editing_api',
+                        'image_editing_gpu',
+                    ],
+                },
             ],
         },
     ]
