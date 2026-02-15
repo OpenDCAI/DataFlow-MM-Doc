@@ -2,7 +2,7 @@
 title: 图像编辑流水线（API版）
 createTime: 2026/02/15 10:23:04
 permalink: /zh/mm_guide/ffwfa9ck/
-icon: basil:lightning-alt-outline
+icon: material-symbols:landscape-2-edit-outline-rounded
 ---
 
 # 图像编辑流水线（API版）

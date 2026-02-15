@@ -2,7 +2,7 @@
 title: 图像生成流水线（GPU版）
 createTime: 2026/02/15 10:14:49
 permalink: /zh/mm_guide/513sulfz/
-icon: basil:lightning-alt-outline
+icon: material-symbols:photo-size-select-large
 ---
 
 # 图像生成流水线（GPU版）

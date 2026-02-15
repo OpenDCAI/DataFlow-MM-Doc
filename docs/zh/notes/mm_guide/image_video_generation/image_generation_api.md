@@ -2,7 +2,7 @@
 title: 图像生成流水线（API版）
 createTime: 2026/02/15 10:17:26
 permalink: /zh/mm_guide/image_generation_api/
-icon: basil:lightning-alt-outline
+icon: material-symbols:photo-prints-outline-rounded
 ---
 
 # 图像生成流水线（API版）

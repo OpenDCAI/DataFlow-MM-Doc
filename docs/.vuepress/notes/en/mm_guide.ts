@@ -68,6 +68,7 @@ export const MMGuide: ThemeNote = defineNoteConfig({
                 {
                     text: 'Image Generation',
                     collapsed: false,
+                    icon: 'material-symbols:add-photo-alternate-outline-rounded',
                     items: [
                         'image_generation_api',
                         'image_generation_gpu',
@@ -76,6 +77,7 @@ export const MMGuide: ThemeNote = defineNoteConfig({
                 {
                     text: 'Image Editing',
                     collapsed: false,
+                    icon: 'material-symbols:palette-outline',
                     items: [
                         'image_editing_api',
                         'image_editing_gpu',

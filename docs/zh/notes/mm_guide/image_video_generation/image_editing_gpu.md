@@ -2,7 +2,7 @@
 title: 图像编辑流水线（GPU版）
 createTime: 2026/02/15 10:19:19
 permalink: /zh/mm_guide/itxtxm62/
-icon: basil:lightning-alt-outline
+icon: material-symbols:draw-outline-rounded
 ---
 
 # 图像编辑流水线（GPU版）
