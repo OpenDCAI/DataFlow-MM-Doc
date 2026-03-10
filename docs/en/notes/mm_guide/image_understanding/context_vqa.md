@@ -30,28 +30,24 @@ The main flow includes:
 ```bash
 mkdir run_dataflow_mm
 cd run_dataflow_mm
-
 ```
 
 ### Step 2: Initialize DataFlow-MM
 
 ```bash
-dataflow init
-
+dataflowmm init
 ```
 
 You will now see:
 
 ```bash
 gpu_pipelines/context_vqa.py  
-
 ```
 
 ### Step 3: Download Example Data
 
 ```bash
 huggingface-cli download --repo-type dataset OpenDCAI/dataflow-demo-image --local-dir example_data
-
 ```
 
 ### Step 4: Configure Model and Data Paths
@@ -75,14 +71,12 @@ self.storage = FileStorage(
     file_name_prefix="context_vqa",
     cache_type="json",
 )
-
 ```
 
 ### Step 5: One-Click Run
 
 ```bash
 python gpu_pipelines/context_vqa.py
-
 ```
 
 ---
@@ -107,7 +101,6 @@ Input data is managed through `FileStorage`, supporting breakpoint resumption.
         ]
     }
 ]
-
 ```
 
 ### 2. **Core Operator Logic**
@@ -125,7 +118,6 @@ self.vqa_generator.run(
     input_image_key=input_image_key,
     output_answer_key=output_answer_key,
 )
-
 ```
 
 #### B. **WikiQARefiner (Result Parsing)**
@@ -140,7 +132,6 @@ self.refiner.run(
     input_key="vqa",          # Raw text from the previous step
     output_key="context_vqa"  # Final structured data
 )
-
 ```
 
 ### 3. **Output Data**
@@ -163,7 +154,6 @@ The final structured data includes `context` (article) and `qas` (list of questi
         ]
     }
 }
-
 ```
 
 ---
@@ -236,5 +226,4 @@ class ContextVQAPipeline:
 if __name__ == "__main__":
     pipe = ContextVQAPipeline()
     pipe.forward()
-
 ```

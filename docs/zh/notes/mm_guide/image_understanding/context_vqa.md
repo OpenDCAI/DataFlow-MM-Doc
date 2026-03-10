@@ -30,28 +30,24 @@ permalink: /zh/mm_guide/contextvqa_pipeline/
 ```bash
 mkdir run_dataflow_mm
 cd run_dataflow_mm
-
 ```
 
 ### 第二步：初始化 DataFlow-MM
 
 ```bash
-dataflow init
-
+dataflowmm init
 ```
 
 这时你会看到：
 
 ```bash
 gpu_pipelines/context_vqa.py  
-
 ```
 
 ### 第三步：下载示例数据
 
 ```bash
 huggingface-cli download --repo-type dataset OpenDCAI/dataflow-demo-image --local-dir example_data
-
 ```
 
 ### 第四步：配置模型与数据路径
@@ -75,14 +71,12 @@ self.storage = FileStorage(
     file_name_prefix="context_vqa",
     cache_type="json",
 )
-
 ```
 
 ### 第五步：一键运行
 
 ```bash
 python gpu_pipelines/context_vqa.py
-
 ```
 
 ---
@@ -107,7 +101,6 @@ python gpu_pipelines/context_vqa.py
         ]
     }
 ]
-
 ```
 
 ### 2. **核心算子逻辑**
@@ -125,7 +118,6 @@ self.vqa_generator.run(
     input_image_key=input_image_key,
     output_answer_key=output_answer_key,
 )
-
 ```
 
 #### B. **WikiQARefiner（结果解析）**
@@ -140,7 +132,6 @@ self.refiner.run(
     input_key="vqa",          # 输入上一涉的原始文本
     output_key="context_vqa"  # 输出最终结构化数据
 )
-
 ```
 
 ### 3. **输出数据**
@@ -163,7 +154,6 @@ self.refiner.run(
         ]
     }
 }
-
 ```
 
 ---
@@ -235,5 +225,4 @@ class ContextVQAPipeline:
 if __name__ == "__main__":
     pipe = ContextVQAPipeline()
     pipe.forward()
-
 ```
