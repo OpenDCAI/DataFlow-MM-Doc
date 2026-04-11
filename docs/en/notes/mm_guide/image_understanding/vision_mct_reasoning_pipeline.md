@@ -1,3 +1,8 @@
+---
+title: vision_mct_reasoning_pipeline
+createTime: 2026/04/11 20:03:51
+permalink: /en/mm_guide/ifj5ge8z/
+---
 
 ```
 

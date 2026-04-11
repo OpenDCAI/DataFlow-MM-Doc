@@ -44,7 +44,7 @@ dataflowmm init
 ### 第三步：下载示例数据
 
 ```bash
-huggingface-cli download --repo-type dataset OpenDCAI/dataflow-demo-image --local-dir dexample_dataa
+huggingface-cli download --repo-type dataset OpenDCAI/dataflow-demo-image --local-dir example_data
 
 ```
 
@@ -84,7 +84,7 @@ python api_pipelines/image_vqa.py
         "conversation": [
             {
                 "from": "human",
-                "value": "Generate complete QA pairs based on image content and caption."
+                "value": "Please generate a relevant question based on the content of the picture, and only output the question content."
             }
         ]
     }
@@ -108,7 +108,14 @@ python api_pipelines/image_vqa.py
 [
   {
     "image": ["./example_data/image_vqa/person.png"],
-    "vqa": "- Q: What is the title of the movie shown on the poster?\n  A: Nightmare Alley\n\n- Q: What color is the film’s title text?\n  A: Gold"
+    "conversation":[
+      {
+        "from":"human",
+        "value":"Please generate a relevant question based on the content of the picture, and only output the question content."
+      }
+    ],
+    "question":"Who is the main actor in the movie \"Nightmare Alley\"?",
+    "answer":"The main actor in the movie \"Nightmare Alley\" is Bradley Cooper."
   }
 ]
 
@@ -141,15 +148,15 @@ class ImageVQAPipeline:
         self.storage = FileStorage(
             first_entry_file_name="./example_data/image_vqa/sample_data.json",
             cache_path="./cache_local",
-            file_name_prefix="qa",
+            file_name_prefix="qa_api",
             cache_type="json",
         )
 
         # ---------- 2. Serving ----------
         self.vlm_serving = APIVLMServing_openai(
-            api_url="http://172.96.141.132:3001/v1", # Any API platform compatible with OpenAI format
+            api_url="https://dashscope.aliyuncs.com/compatible-mode/v1", # Any API platform compatible with OpenAI format
             key_name_of_api_key="DF_API_KEY", # Set the API key for the corresponding platform in the environment variable or line 4
-            model_name="gpt-5-nano-2025-08-07",
+            model_name="qwen3-vl-8b-instruct",
             image_io=None,
             send_request_stream=False,
             max_workers=10,
@@ -165,13 +172,23 @@ class ImageVQAPipeline:
     # ------------------------------------------------------------------ #
     def forward(self):
         input_image_key = "image"
-        output_answer_key = "vqa"
+        output_step1_key = "question"
+        output_step2_key = "answer"
 
+        # Step 1: Generate the question for the image
         self.vqa_generator.run(
             storage=self.storage.step(),
             input_conversation_key="conversation",
             input_image_key=input_image_key,
-            output_answer_key=output_answer_key,
+            output_answer_key=output_step1_key,
+        )
+
+        # Step 2: Generate the answer for the question
+        self.vqa_generator.run(
+            storage=self.storage.step(),
+            input_prompt_key=output_step1_key,
+            input_image_key=input_image_key,
+            output_answer_key=output_step2_key,
         )
 
 # ---------------------------- CLI 入口 -------------------------------- #
